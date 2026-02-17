@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireClient } from "@/lib/auth-server";
-import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CommentSection } from "@/components/shared/comment-section";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Download, AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 import Link from "next/link";
 import { DeliverableReviewActions } from "@/components/portal/deliverable-review-actions";
 import { getDeliverableTypeLabel } from "@/lib/portal-constants";
+import { relativeTime } from "@/lib/utils";
 
 export async function generateMetadata({ params }: { params: Promise<{ deliverableId: string }> }) {
   const { deliverableId } = await params;
@@ -54,27 +54,33 @@ export default async function DeliverableDetailPage({
   if (deliverable.eventCompany.company.id !== session.companyId) notFound();
 
   const content = deliverable.content as Record<string, unknown> | null;
-
-  const showAmberBanner = deliverable.status === "IN_REVIEW" || deliverable.status === "REVISED";
-  const showGreenBanner = deliverable.status === "APPROVED" || deliverable.status === "DELIVERED";
+  const needsAction = deliverable.status === "IN_REVIEW" || deliverable.status === "REVISED";
+  const isDone = deliverable.status === "APPROVED" || deliverable.status === "DELIVERED";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
+      {/* Header */}
       <div>
         <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 h-7 text-xs text-muted-foreground">
           <Link href="/portal/deliverables">
             <ArrowLeft className="mr-1 h-3 w-3" />
-            Livrables
+            Retour aux livrables
           </Link>
         </Button>
-        <PageHeader
-          title={deliverable.title}
-          description={deliverable.description ?? undefined}
-        />
+        <h1 className="text-lg font-semibold">{deliverable.title}</h1>
+        {deliverable.description && (
+          <p className="text-sm text-muted-foreground mt-0.5">{deliverable.description}</p>
+        )}
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
+          <StatusBadge status={deliverable.status} />
+          <span>{getDeliverableTypeLabel(deliverable.type)}</span>
+          <span>v{deliverable.version}</span>
+          <span>Soumis {relativeTime(deliverable.updatedAt)}</span>
+        </div>
       </div>
 
       {/* Contextual banner */}
-      {showAmberBanner && (
+      {needsAction && (
         <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/30 px-4 py-3">
           <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
           <p className="text-sm text-amber-800 dark:text-amber-300">
@@ -82,62 +88,66 @@ export default async function DeliverableDetailPage({
           </p>
         </div>
       )}
-      {showGreenBanner && (
+      {isDone && (
         <div className="flex items-center gap-3 rounded-md border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/30 px-4 py-3">
           <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
           <p className="text-sm text-emerald-800 dark:text-emerald-300">
             <span className="font-medium">
               {deliverable.status === "DELIVERED" ? "Livrable livre" : "Livrable approuve"}
             </span>
-            {" — "}
-            {deliverable.status === "DELIVERED"
-              ? "le livrable est finalise et disponible."
-              : "aucune action requise."}
+            {" — aucune action requise."}
           </p>
         </div>
       )}
 
-      {/* Meta */}
-      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-        <StatusBadge status={deliverable.status} />
-        <span>{getDeliverableTypeLabel(deliverable.type)}</span>
-        <span>{deliverable.eventCompany.event.name}</span>
-        <span>v{deliverable.version}</span>
-      </div>
-
       {/* Content preview */}
       {content && (
         <div>
-          <h2 className="text-sm font-medium mb-3">Apercu</h2>
-          <div className="rounded-md border p-3">
-            {deliverable.type === "EMAIL_TEMPLATE" && content.subject ? (
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Objet</p>
-                  <p className="text-sm font-medium mt-0.5">{String(content.subject)}</p>
-                </div>
-                {content.body ? (
-                  <div>
-                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Contenu</p>
-                    <pre className="mt-1 text-sm whitespace-pre-wrap font-sans text-muted-foreground">
-                      {String(content.body)}
-                    </pre>
-                  </div>
-                ) : null}
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+            Apercu
+          </h2>
+          {deliverable.type === "EMAIL_TEMPLATE" && content.subject ? (
+            <div className="mx-auto max-w-2xl rounded-md border bg-white dark:bg-muted/30 p-6 space-y-4">
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Objet</p>
+                <p className="text-sm font-medium mt-0.5">{String(content.subject)}</p>
               </div>
-            ) : (
+              {content.body != null && (
+                <div className="border-t pt-4">
+                  <div
+                    className="prose prose-sm max-w-none dark:prose-invert text-sm"
+                    dangerouslySetInnerHTML={{
+                      __html: String(content.body).includes("<")
+                        ? String(content.body)
+                        : `<pre class="whitespace-pre-wrap font-sans">${String(content.body)}</pre>`,
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          ) : deliverable.type === "SCRIPT" ? (
+            <div className="rounded-md border p-4">
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <pre className="whitespace-pre-wrap font-sans text-sm">
+                  {typeof content === "string" ? content : JSON.stringify(content, null, 2)}
+                </pre>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-md border p-4">
               <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
                 {JSON.stringify(content, null, 2)}
               </pre>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* File download */}
       {deliverable.fileUrl && (
-        <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
-          <div>
+        <div className="flex items-center gap-3 rounded-md border p-4">
+          <FileText className="h-8 w-8 text-muted-foreground shrink-0" />
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">{deliverable.fileName ?? "Fichier joint"}</p>
             <p className="text-[11px] text-muted-foreground">Cliquer pour telecharger</p>
           </div>
@@ -150,19 +160,11 @@ export default async function DeliverableDetailPage({
         </div>
       )}
 
-      {/* Review actions */}
-      {(deliverable.status === "IN_REVIEW" || deliverable.status === "REVISED") && (
-        <div className="rounded-md border p-3">
-          <p className="text-xs text-muted-foreground mb-3">
-            Revisez ce livrable et approuvez ou demandez des modifications.
-          </p>
-          <DeliverableReviewActions deliverableId={deliverable.id} />
-        </div>
-      )}
-
-      {/* Discussion */}
+      {/* Comments */}
       <div>
-        <h2 className="text-sm font-medium mb-3">Commentaires</h2>
+        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+          Commentaires ({deliverable.comments.length})
+        </h2>
         <div className="rounded-md border p-3">
           <CommentSection
             comments={deliverable.comments}
@@ -170,6 +172,15 @@ export default async function DeliverableDetailPage({
           />
         </div>
       </div>
+
+      {/* Sticky action bar */}
+      {needsAction && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 p-4">
+          <div className="max-w-3xl mx-auto">
+            <DeliverableReviewActions deliverableId={deliverable.id} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
