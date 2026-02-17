@@ -14,7 +14,7 @@ interface AppHeaderProps {
 const labelMap: Record<string, string> = {
   admin: "Admin",
   portal: "Portail",
-  dashboard: "Tableau de bord",
+  dashboard: "Accueil",
   events: "Evenements",
   companies: "Entreprises",
   deliverables: "Livrables",

@@ -9,11 +9,22 @@ import { cn } from "@/lib/utils";
 interface PortalShellProps {
   user: { name: string; email: string };
   companyName: string;
+  activeEventName: string | null;
   notificationCount: number;
+  pendingStrategies: number;
+  pendingDeliverables: number;
   children: React.ReactNode;
 }
 
-export function PortalShell({ user, companyName, notificationCount, children }: PortalShellProps) {
+export function PortalShell({
+  user,
+  companyName,
+  activeEventName,
+  notificationCount,
+  pendingStrategies,
+  pendingDeliverables,
+  children,
+}: PortalShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -24,6 +35,9 @@ export function PortalShell({ user, companyName, notificationCount, children }: 
         <PortalSidebar
           user={user}
           companyName={companyName}
+          activeEventName={activeEventName}
+          pendingStrategies={pendingStrategies}
+          pendingDeliverables={pendingDeliverables}
           collapsed={collapsed}
           onToggle={() => setCollapsed((c) => !c)}
         />
@@ -35,6 +49,9 @@ export function PortalShell({ user, companyName, notificationCount, children }: 
           <PortalSidebar
             user={user}
             companyName={companyName}
+            activeEventName={activeEventName}
+            pendingStrategies={pendingStrategies}
+            pendingDeliverables={pendingDeliverables}
             collapsed={false}
             onToggle={() => setMobileOpen(false)}
           />

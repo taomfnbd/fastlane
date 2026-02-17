@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Target,
   Package,
-  Clock,
   Settings,
   LogOut,
   PanelLeftClose,
@@ -16,25 +15,45 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/auth-client";
 
-const navItems = [
-  { label: "Tableau de bord", href: "/portal/dashboard", icon: LayoutDashboard },
-  { label: "Strategie", href: "/portal/strategy", icon: Target },
-  { label: "Livrables", href: "/portal/deliverables", icon: Package },
-  { label: "Activite", href: "/portal/timeline", icon: Clock },
-  { label: "Parametres", href: "/portal/settings", icon: Settings },
-];
+interface NavItem {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  badge?: number;
+}
 
 interface PortalSidebarProps {
   user: { name: string; email: string };
   companyName: string;
+  activeEventName: string | null;
+  pendingStrategies: number;
+  pendingDeliverables: number;
   collapsed: boolean;
   onToggle: () => void;
 }
 
-export function PortalSidebar({ user, companyName, collapsed, onToggle }: PortalSidebarProps) {
+export function PortalSidebar({
+  user,
+  companyName,
+  activeEventName,
+  pendingStrategies,
+  pendingDeliverables,
+  collapsed,
+  onToggle,
+}: PortalSidebarProps) {
   const pathname = usePathname();
 
-  function NavItem({ item }: { item: (typeof navItems)[0] }) {
+  const navItems: NavItem[] = [
+    { label: "Accueil", href: "/portal/dashboard", icon: LayoutDashboard },
+    { label: "Strategie", href: "/portal/strategy", icon: Target, badge: pendingStrategies },
+    { label: "Livrables", href: "/portal/deliverables", icon: Package, badge: pendingDeliverables },
+  ];
+
+  const bottomItems: NavItem[] = [
+    { label: "Parametres", href: "/portal/settings", icon: Settings },
+  ];
+
+  function NavItemLink({ item }: { item: NavItem }) {
     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
     return (
       <Link
@@ -48,7 +67,21 @@ export function PortalSidebar({ user, companyName, collapsed, onToggle }: Portal
         title={collapsed ? item.label : undefined}
       >
         <item.icon className="h-4 w-4 shrink-0" />
-        {!collapsed && <span>{item.label}</span>}
+        {!collapsed && (
+          <>
+            <span className="flex-1">{item.label}</span>
+            {item.badge ? (
+              <span className="text-xs font-medium tabular-nums text-muted-foreground">
+                {item.badge}
+              </span>
+            ) : null}
+          </>
+        )}
+        {collapsed && item.badge ? (
+          <span className="absolute right-1 top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">
+            {item.badge}
+          </span>
+        ) : null}
       </Link>
     );
   }
@@ -64,8 +97,12 @@ export function PortalSidebar({ user, companyName, collapsed, onToggle }: Portal
       <div className="flex h-14 items-center justify-between border-b px-3">
         {!collapsed && (
           <div className="min-w-0">
-            <span className="text-sm font-semibold block">Fastlane</span>
-            <span className="text-[11px] text-muted-foreground truncate block">{companyName}</span>
+            <span className="text-sm font-semibold block truncate">{companyName}</span>
+            {activeEventName && (
+              <span className="text-[11px] text-muted-foreground truncate block">
+                {activeEventName}
+              </span>
+            )}
           </div>
         )}
         <Button
@@ -81,7 +118,13 @@ export function PortalSidebar({ user, companyName, collapsed, onToggle }: Portal
       {/* Nav */}
       <nav className="flex-1 space-y-1 px-2 py-3">
         {navItems.map((item) => (
-          <NavItem key={item.href} item={item} />
+          <div key={item.href} className="relative">
+            <NavItemLink item={item} />
+          </div>
+        ))}
+        <div className="my-2" />
+        {bottomItems.map((item) => (
+          <NavItemLink key={item.href} item={item} />
         ))}
       </nav>
 

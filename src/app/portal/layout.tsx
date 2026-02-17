@@ -15,7 +15,7 @@ export default async function PortalLayout({
     select: {
       name: true,
       email: true,
-      company: { select: { name: true } },
+      company: { select: { id: true, name: true } },
     },
   });
 
@@ -23,9 +23,29 @@ export default async function PortalLayout({
     redirect("/login");
   }
 
-  const notificationCount = await prisma.notification.count({
-    where: { userId: session.user.id, read: false },
-  });
+  const [notificationCount, eventCompanies] = await Promise.all([
+    prisma.notification.count({
+      where: { userId: session.user.id, read: false },
+    }),
+    prisma.eventCompany.findMany({
+      where: { companyId: user.company.id },
+      include: {
+        event: { select: { name: true, status: true } },
+        strategies: {
+          where: { status: { in: ["PENDING_REVIEW", "REVISED"] } },
+          select: { id: true },
+        },
+        deliverables: {
+          where: { status: { in: ["IN_REVIEW", "REVISED"] } },
+          select: { id: true },
+        },
+      },
+    }),
+  ]);
+
+  const activeEvent = eventCompanies.find((ec) => ec.event.status === "ACTIVE");
+  const pendingStrategies = eventCompanies.reduce((sum, ec) => sum + ec.strategies.length, 0);
+  const pendingDeliverables = eventCompanies.reduce((sum, ec) => sum + ec.deliverables.length, 0);
 
   return (
     <PortalShell
@@ -34,7 +54,10 @@ export default async function PortalLayout({
         email: user.email,
       }}
       companyName={user.company.name}
+      activeEventName={activeEvent?.event.name ?? null}
       notificationCount={notificationCount}
+      pendingStrategies={pendingStrategies}
+      pendingDeliverables={pendingDeliverables}
     >
       {children}
     </PortalShell>
