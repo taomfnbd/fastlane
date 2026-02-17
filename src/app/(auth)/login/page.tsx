@@ -28,7 +28,7 @@ export default function LoginPage() {
       });
 
       if (result.error) {
-        toast.error(result.error.message ?? "Invalid credentials");
+        toast.error(result.error.message ?? "Identifiants invalides");
         setLoading(false);
         return;
       }
@@ -36,7 +36,7 @@ export default function LoginPage() {
       router.push("/admin/dashboard");
       router.refresh();
     } catch {
-      toast.error("Something went wrong");
+      toast.error("Une erreur est survenue");
       setLoading(false);
     }
   }
@@ -45,7 +45,7 @@ export default function LoginPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-lg font-semibold">Fastlane</h1>
-        <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
+        <p className="text-sm text-muted-foreground mt-1">Connectez-vous a votre compte</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -54,7 +54,7 @@ export default function LoginPage() {
           <Input
             id="email"
             type="email"
-            placeholder="you@example.com"
+            placeholder="vous@exemple.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -64,7 +64,7 @@ export default function LoginPage() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm">Password</Label>
+          <Label htmlFor="password" className="text-sm">Mot de passe</Label>
           <Input
             id="password"
             type="password"
@@ -78,13 +78,13 @@ export default function LoginPage() {
         </div>
         <Button type="submit" className="w-full h-9 text-sm" disabled={loading}>
           {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-          Sign in
+          Se connecter
         </Button>
       </form>
 
       <div className="text-xs text-muted-foreground">
         <Link href="/forgot-password" className="hover:text-foreground transition-colors">
-          Forgot password?
+          Mot de passe oublie ?
         </Link>
       </div>
     </div>

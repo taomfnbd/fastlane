@@ -5,7 +5,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Target, Package, Clock, Bell } from "lucide-react";
 import Link from "next/link";
 
-export const metadata = { title: "Dashboard" };
+export const metadata = { title: "Tableau de bord" };
 
 export default async function PortalDashboardPage() {
   const session = await requireClient();
@@ -40,15 +40,15 @@ export default async function PortalDashboardPage() {
   });
 
   const stats = [
-    { label: "Strategies", value: totalStrategies, sub: `${pendingStrategies} to review`, icon: Target },
-    { label: "Deliverables", value: totalDeliverables, sub: `${pendingDeliverables} to review`, icon: Package },
-    { label: "Current event", value: activeEvent?.event.name ?? "None", sub: activeEvent ? `ends ${new Date(activeEvent.event.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "—", icon: Clock },
-    { label: "Unread", value: recentNotifications.filter((n) => !n.read).length, sub: "notifications", icon: Bell },
+    { label: "Strategies", value: totalStrategies, sub: `${pendingStrategies} a reviser`, icon: Target },
+    { label: "Livrables", value: totalDeliverables, sub: `${pendingDeliverables} a reviser`, icon: Package },
+    { label: "Evenement actif", value: activeEvent?.event.name ?? "Aucun", sub: activeEvent ? `fin le ${new Date(activeEvent.event.endDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}` : "—", icon: Clock },
+    { label: "Non lues", value: recentNotifications.filter((n) => !n.read).length, sub: "notifications", icon: Bell },
   ];
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Dashboard" />
+      <PageHeader title="Tableau de bord" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-px rounded-md border bg-border overflow-hidden">
@@ -67,9 +67,9 @@ export default async function PortalDashboardPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Items to review */}
         <div>
-          <h2 className="text-sm font-medium mb-3">To review</h2>
+          <h2 className="text-sm font-medium mb-3">A reviser</h2>
           {pendingStrategies === 0 && pendingDeliverables === 0 ? (
-            <p className="text-xs text-muted-foreground py-8 text-center">Nothing to review right now.</p>
+            <p className="text-xs text-muted-foreground py-8 text-center">Rien a reviser pour le moment.</p>
           ) : (
             <div className="rounded-md border divide-y">
               {eventCompanies.flatMap((ec) =>
@@ -83,7 +83,7 @@ export default async function PortalDashboardPage() {
                     >
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{s.title}</p>
-                        <p className="text-[11px] text-muted-foreground">Strategy</p>
+                        <p className="text-[11px] text-muted-foreground">Strategie</p>
                       </div>
                       <StatusBadge status={s.status} />
                     </Link>
@@ -114,7 +114,7 @@ export default async function PortalDashboardPage() {
         <div>
           <h2 className="text-sm font-medium mb-3">Notifications</h2>
           {recentNotifications.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-8 text-center">No notifications yet.</p>
+            <p className="text-xs text-muted-foreground py-8 text-center">Aucune notification.</p>
           ) : (
             <div className="space-y-0">
               {recentNotifications.map((notification) => (
@@ -128,9 +128,9 @@ export default async function PortalDashboardPage() {
                     <p className="text-xs font-medium">{notification.title}</p>
                     <p className="text-[11px] text-muted-foreground">{notification.message}</p>
                     <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                      {new Date(notification.createdAt).toLocaleDateString("en-US", {
-                        month: "short",
+                      {new Date(notification.createdAt).toLocaleDateString("fr-FR", {
                         day: "numeric",
+                        month: "short",
                         hour: "2-digit",
                         minute: "2-digit",
                       })}

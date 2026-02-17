@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Package } from "lucide-react";
 import Link from "next/link";
 
-export const metadata = { title: "Deliverables" };
+export const metadata = { title: "Livrables" };
 
 export default async function PortalDeliverablesPage() {
   const session = await requireClient();
@@ -26,24 +26,24 @@ export default async function PortalDeliverablesPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Deliverables" />
+      <PageHeader title="Livrables" />
 
       {deliverables.length === 0 ? (
         <EmptyState
           icon={Package}
-          title="No deliverables yet"
-          description="Deliverables will appear here once the team prepares them."
+          title="Aucun livrable"
+          description="Les livrables apparaitront ici une fois prepares par l'equipe."
         />
       ) : (
         <div className="rounded-md border">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-xs text-muted-foreground">
-                <th className="text-left font-medium px-3 py-2">Title</th>
+                <th className="text-left font-medium px-3 py-2">Titre</th>
                 <th className="text-left font-medium px-3 py-2 hidden sm:table-cell">Type</th>
-                <th className="text-left font-medium px-3 py-2 hidden md:table-cell">Event</th>
+                <th className="text-left font-medium px-3 py-2 hidden md:table-cell">Evenement</th>
                 <th className="text-left font-medium px-3 py-2 hidden md:table-cell">Version</th>
-                <th className="text-left font-medium px-3 py-2">Status</th>
+                <th className="text-left font-medium px-3 py-2">Statut</th>
               </tr>
             </thead>
             <tbody className="divide-y">

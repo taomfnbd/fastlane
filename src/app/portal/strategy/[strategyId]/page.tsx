@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ strategyI
     where: { id: strategyId },
     select: { title: true },
   });
-  return { title: strategy?.title ?? "Strategy" };
+  return { title: strategy?.title ?? "Strategie" };
 }
 
 export default async function StrategyDetailPage({
@@ -78,7 +78,7 @@ export default async function StrategyDetailPage({
         <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 h-7 text-xs text-muted-foreground">
           <Link href="/portal/strategy">
             <ArrowLeft className="mr-1 h-3 w-3" />
-            Strategy
+            Strategie
           </Link>
         </Button>
         <PageHeader
@@ -92,7 +92,7 @@ export default async function StrategyDetailPage({
         <StatusBadge status={strategy.status} />
         <span>{strategy.eventCompany.event.name}</span>
         <span>v{strategy.version}</span>
-        {totalItems > 0 && <span>{approvedItems}/{totalItems} approved</span>}
+        {totalItems > 0 && <span>{approvedItems}/{totalItems} approuves</span>}
       </div>
 
       {/* Progress */}
@@ -107,9 +107,9 @@ export default async function StrategyDetailPage({
 
       {/* Strategy Items */}
       <div>
-        <h2 className="text-sm font-medium mb-3">Items</h2>
+        <h2 className="text-sm font-medium mb-3">Elements</h2>
         {strategy.items.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-8 text-center">No items yet.</p>
+          <p className="text-xs text-muted-foreground py-8 text-center">Aucun element.</p>
         ) : (
           <div className="space-y-3">
             {strategy.items.map((item, index) => (
@@ -152,7 +152,7 @@ export default async function StrategyDetailPage({
 
       {/* Discussion */}
       <div>
-        <h2 className="text-sm font-medium mb-3">Discussion</h2>
+        <h2 className="text-sm font-medium mb-3">Commentaires</h2>
         <div className="rounded-md border p-3">
           <CommentSection
             comments={strategy.comments}

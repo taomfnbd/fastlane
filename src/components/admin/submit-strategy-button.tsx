@@ -13,7 +13,7 @@ export function SubmitStrategyButton({ strategyId }: { strategyId: string }) {
     setLoading(true);
     const result = await submitStrategyForReview(strategyId);
     if (result.success) {
-      toast.success("Strategy submitted for review");
+      toast.success("Strategie soumise pour revision");
     } else {
       toast.error(result.error);
     }
@@ -22,12 +22,8 @@ export function SubmitStrategyButton({ strategyId }: { strategyId: string }) {
 
   return (
     <Button size="sm" variant="outline" onClick={handleSubmit} disabled={loading}>
-      {loading ? (
-        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-      ) : (
-        <Send className="mr-1 h-3 w-3" />
-      )}
-      Submit
+      {loading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Send className="mr-1 h-3 w-3" />}
+      Soumettre
     </Button>
   );
 }

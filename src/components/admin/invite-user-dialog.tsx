@@ -3,22 +3,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { UserPlus, Loader2 } from "lucide-react";
@@ -44,97 +35,61 @@ export function InviteUserDialog() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-
     const formData = new FormData(e.currentTarget);
     formData.set("role", role);
-
     const result = await inviteUser(formData);
-
     if (result.success) {
-      toast.success("User created");
+      toast.success("Utilisateur cree");
       setOpen(false);
     } else {
       toast.error(result.error);
     }
-
     setLoading(false);
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Invite User
-        </Button>
+        <Button><UserPlus className="mr-2 h-4 w-4" />Inviter</Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Invite User</DialogTitle>
-            <DialogDescription>
-              Create a new user account on the platform.
-            </DialogDescription>
+            <DialogTitle>Inviter un utilisateur</DialogTitle>
+            <DialogDescription>Creer un nouveau compte utilisateur.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full name</Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="John Doe"
-                required
-                disabled={loading}
-              />
+              <Label htmlFor="name">Nom complet</Label>
+              <Input id="name" name="name" placeholder="Jean Dupont" required disabled={loading} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="john@example.com"
-                required
-                disabled={loading}
-              />
+              <Input id="email" name="email" type="email" placeholder="jean@exemple.com" required disabled={loading} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="At least 8 characters"
-                minLength={8}
-                required
-                disabled={loading}
-              />
+              <Label htmlFor="password">Mot de passe</Label>
+              <Input id="password" name="password" type="password" placeholder="Au moins 8 caracteres" minLength={8} required disabled={loading} />
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ADMIN">Admin (Fastlane Team)</SelectItem>
-                  <SelectItem value="CLIENT_ADMIN">Client Admin</SelectItem>
-                  <SelectItem value="CLIENT_MEMBER">Client Member</SelectItem>
+                  <SelectItem value="ADMIN">Admin (Equipe Fastlane)</SelectItem>
+                  <SelectItem value="CLIENT_ADMIN">Admin client</SelectItem>
+                  <SelectItem value="CLIENT_MEMBER">Membre client</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {isClientRole && (
               <div className="space-y-2">
-                <Label>Company</Label>
+                <Label>Entreprise</Label>
                 <Select name="companyId" required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a company" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Selectionner une entreprise" /></SelectTrigger>
                   <SelectContent>
                     {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
+                      <SelectItem key={company.id} value={company.id}>{company.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -142,17 +97,9 @@ export function InviteUserDialog() {
             )}
           </div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>Annuler</Button>
             <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create User
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Creer
             </Button>
           </DialogFooter>
         </form>

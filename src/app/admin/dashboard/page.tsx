@@ -5,47 +5,31 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Calendar, Building2, Package, Target } from "lucide-react";
 import Link from "next/link";
 
-export const metadata = { title: "Dashboard" };
+export const metadata = { title: "Tableau de bord" };
 
 export default async function AdminDashboardPage() {
   await requireAdmin();
 
-  const [
-    activeEventsCount,
-    totalCompanies,
-    pendingDeliverables,
-    pendingStrategies,
-    recentEvents,
-    recentActivities,
-  ] = await Promise.all([
+  const [activeEventsCount, totalCompanies, pendingDeliverables, pendingStrategies, recentEvents, recentActivities] = await Promise.all([
     prisma.event.count({ where: { status: "ACTIVE" } }),
     prisma.company.count(),
     prisma.deliverable.count({ where: { status: "IN_REVIEW" } }),
     prisma.strategy.count({ where: { status: "PENDING_REVIEW" } }),
-    prisma.event.findMany({
-      take: 5,
-      orderBy: { updatedAt: "desc" },
-      include: { companies: { include: { company: true } } },
-    }),
-    prisma.activity.findMany({
-      take: 10,
-      orderBy: { createdAt: "desc" },
-      include: { user: { select: { name: true } } },
-    }),
+    prisma.event.findMany({ take: 5, orderBy: { updatedAt: "desc" }, include: { companies: { include: { company: true } } } }),
+    prisma.activity.findMany({ take: 10, orderBy: { createdAt: "desc" }, include: { user: { select: { name: true } } } }),
   ]);
 
   const stats = [
-    { label: "Active events", value: activeEventsCount, icon: Calendar },
-    { label: "Companies", value: totalCompanies, icon: Building2 },
-    { label: "To review", value: pendingDeliverables, icon: Package },
-    { label: "Pending strategies", value: pendingStrategies, icon: Target },
+    { label: "Evenements actifs", value: activeEventsCount, icon: Calendar },
+    { label: "Entreprises", value: totalCompanies, icon: Building2 },
+    { label: "A reviser", value: pendingDeliverables, icon: Package },
+    { label: "Strategies en attente", value: pendingStrategies, icon: Target },
   ];
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Dashboard" />
+      <PageHeader title="Tableau de bord" />
 
-      {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-px rounded-md border bg-border overflow-hidden">
         {stats.map((stat) => (
           <div key={stat.label} className="bg-background p-4">
@@ -59,29 +43,20 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Recent Events */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium">Recent events</h2>
-            <Link href="/admin/events" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              View all
-            </Link>
+            <h2 className="text-sm font-medium">Evenements recents</h2>
+            <Link href="/admin/events" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Voir tout</Link>
           </div>
           {recentEvents.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-8 text-center">No events yet</p>
+            <p className="text-xs text-muted-foreground py-8 text-center">Aucun evenement</p>
           ) : (
             <div className="rounded-md border divide-y">
               {recentEvents.map((event) => (
-                <Link
-                  key={event.id}
-                  href={`/admin/events/${event.id}`}
-                  className="flex items-center justify-between px-3 py-2.5 hover:bg-accent/50 transition-colors"
-                >
+                <Link key={event.id} href={`/admin/events/${event.id}`} className="flex items-center justify-between px-3 py-2.5 hover:bg-accent/50 transition-colors">
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{event.name}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {event.companies.length} {event.companies.length === 1 ? "company" : "companies"}
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">{event.companies.length} entreprise{event.companies.length !== 1 && "s"}</p>
                   </div>
                   <StatusBadge status={event.status} />
                 </Link>
@@ -90,18 +65,14 @@ export default async function AdminDashboardPage() {
           )}
         </div>
 
-        {/* Recent Activity */}
         <div>
-          <h2 className="text-sm font-medium mb-3">Activity</h2>
+          <h2 className="text-sm font-medium mb-3">Activite</h2>
           {recentActivities.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-8 text-center">No activity yet</p>
+            <p className="text-xs text-muted-foreground py-8 text-center">Aucune activite</p>
           ) : (
             <div className="space-y-0">
               {recentActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start gap-2.5 py-2 text-sm"
-                >
+                <div key={activity.id} className="flex items-start gap-2.5 py-2 text-sm">
                   <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium mt-0.5">
                     {activity.user.name.charAt(0)}
                   </div>
@@ -111,12 +82,7 @@ export default async function AdminDashboardPage() {
                       <span className="text-muted-foreground">{activity.message}</span>
                     </p>
                     <p className="text-[11px] text-muted-foreground/60">
-                      {new Date(activity.createdAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {new Date(activity.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
                 </div>

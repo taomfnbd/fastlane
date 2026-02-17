@@ -3,12 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,9 +12,7 @@ import { toast } from "sonner";
 import { Plus, Loader2 } from "lucide-react";
 import { addStrategyItem } from "@/server/actions/strategy";
 
-interface AddStrategyItemDialogProps {
-  strategyId: string;
-}
+interface AddStrategyItemDialogProps { strategyId: string; }
 
 export function AddStrategyItemDialog({ strategyId }: AddStrategyItemDialogProps) {
   const [open, setOpen] = useState(false);
@@ -28,18 +21,15 @@ export function AddStrategyItemDialog({ strategyId }: AddStrategyItemDialogProps
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-
     const formData = new FormData(e.currentTarget);
     formData.set("strategyId", strategyId);
     const result = await addStrategyItem(formData);
-
     if (result.success) {
-      toast.success("Item added");
+      toast.success("Element ajoute");
       setOpen(false);
     } else {
       toast.error(result.error);
     }
-
     setLoading(false);
   }
 
@@ -47,44 +37,26 @@ export function AddStrategyItemDialog({ strategyId }: AddStrategyItemDialogProps
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="w-full border-dashed">
-          <Plus className="mr-1 h-3 w-3" />
-          Add Item
+          <Plus className="mr-1 h-3 w-3" />Ajouter un element
         </Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Add Strategy Item</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Ajouter un element</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                name="title"
-                placeholder="LinkedIn Cold Outreach"
-                required
-                disabled={loading}
-              />
+              <Label htmlFor="title">Titre</Label>
+              <Input id="title" name="title" placeholder="Prospection LinkedIn" required disabled={loading} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description (optional)</Label>
-              <Textarea
-                id="description"
-                name="description"
-                placeholder="Describe this strategy item..."
-                rows={3}
-                disabled={loading}
-              />
+              <Label htmlFor="description">Description (optionnel)</Label>
+              <Textarea id="description" name="description" placeholder="Decrivez cet element..." rows={3} disabled={loading} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>Annuler</Button>
             <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Add
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Ajouter
             </Button>
           </DialogFooter>
         </form>

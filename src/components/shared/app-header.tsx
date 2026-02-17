@@ -13,15 +13,15 @@ interface AppHeaderProps {
 
 const labelMap: Record<string, string> = {
   admin: "Admin",
-  portal: "Portal",
-  dashboard: "Dashboard",
-  events: "Events",
-  companies: "Companies",
-  deliverables: "Deliverables",
-  users: "Users",
-  settings: "Settings",
-  strategy: "Strategy",
-  timeline: "Timeline",
+  portal: "Portail",
+  dashboard: "Tableau de bord",
+  events: "Evenements",
+  companies: "Entreprises",
+  deliverables: "Livrables",
+  users: "Utilisateurs",
+  settings: "Parametres",
+  strategy: "Strategie",
+  timeline: "Chronologie",
 };
 
 export function AppHeader({ user, notificationCount = 0, onMobileMenuToggle }: AppHeaderProps) {
@@ -69,7 +69,7 @@ export function AppHeader({ user, notificationCount = 0, onMobileMenuToggle }: A
           variant="ghost"
           size="icon"
           className="h-7 w-7 text-muted-foreground"
-          title="Search (Cmd+K)"
+          title="Rechercher (Cmd+K)"
         >
           <Search className="h-3.5 w-3.5" />
         </Button>

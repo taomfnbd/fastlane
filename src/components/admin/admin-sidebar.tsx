@@ -18,15 +18,15 @@ import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/auth-client";
 
 const mainNav = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Events", href: "/admin/events", icon: Calendar },
-  { label: "Companies", href: "/admin/companies", icon: Building2 },
-  { label: "Deliverables", href: "/admin/events", icon: Package },
+  { label: "Tableau de bord", href: "/admin/dashboard", icon: LayoutDashboard },
+  { label: "Evenements", href: "/admin/events", icon: Calendar },
+  { label: "Entreprises", href: "/admin/companies", icon: Building2 },
+  { label: "Livrables", href: "/admin/events", icon: Package },
 ];
 
 const workspaceNav = [
-  { label: "Users", href: "/admin/users", icon: Users },
-  { label: "Settings", href: "/admin/settings", icon: Settings },
+  { label: "Utilisateurs", href: "/admin/users", icon: Users },
+  { label: "Parametres", href: "/admin/settings", icon: Settings },
 ];
 
 interface AdminSidebarProps {
@@ -82,13 +82,13 @@ export function AdminSidebar({ user, collapsed, onToggle }: AdminSidebarProps) {
       {/* Nav */}
       <nav className="flex-1 space-y-1 px-2 py-3">
         {mainNav.map((item) => (
-          <NavItem key={item.href} item={item} />
+          <NavItem key={item.href + item.label} item={item} />
         ))}
 
         {!collapsed && (
           <div className="my-3 px-2">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Workspace
+              Espace de travail
             </span>
           </div>
         )}
@@ -109,10 +109,10 @@ export function AdminSidebar({ user, collapsed, onToggle }: AdminSidebarProps) {
         <button
           onClick={() => signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/login"; } } })}
           className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors duration-150 hover:bg-accent/50 hover:text-foreground"
-          title={collapsed ? "Logout" : undefined}
+          title={collapsed ? "Deconnexion" : undefined}
         >
           <LogOut className="h-4 w-4 shrink-0" />
-          {!collapsed && <span>Logout</span>}
+          {!collapsed && <span>Deconnexion</span>}
         </button>
       </div>
     </aside>

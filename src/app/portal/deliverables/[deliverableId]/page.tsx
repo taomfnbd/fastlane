@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ deliverab
     where: { id: deliverableId },
     select: { title: true },
   });
-  return { title: d?.title ?? "Deliverable" };
+  return { title: d?.title ?? "Livrable" };
 }
 
 export default async function DeliverableDetailPage({
@@ -60,7 +60,7 @@ export default async function DeliverableDetailPage({
         <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 h-7 text-xs text-muted-foreground">
           <Link href="/portal/deliverables">
             <ArrowLeft className="mr-1 h-3 w-3" />
-            Deliverables
+            Livrables
           </Link>
         </Button>
         <PageHeader
@@ -80,17 +80,17 @@ export default async function DeliverableDetailPage({
       {/* Content preview */}
       {content && (
         <div>
-          <h2 className="text-sm font-medium mb-3">Preview</h2>
+          <h2 className="text-sm font-medium mb-3">Apercu</h2>
           <div className="rounded-md border p-3">
             {deliverable.type === "EMAIL_TEMPLATE" && content.subject ? (
               <div className="space-y-3">
                 <div>
-                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Subject</p>
+                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Objet</p>
                   <p className="text-sm font-medium mt-0.5">{String(content.subject)}</p>
                 </div>
                 {content.body ? (
                   <div>
-                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Body</p>
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Contenu</p>
                     <pre className="mt-1 text-sm whitespace-pre-wrap font-sans text-muted-foreground">
                       {String(content.body)}
                     </pre>
@@ -110,13 +110,13 @@ export default async function DeliverableDetailPage({
       {deliverable.fileUrl && (
         <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
           <div>
-            <p className="text-sm font-medium">{deliverable.fileName ?? "Attached file"}</p>
-            <p className="text-[11px] text-muted-foreground">Click to download</p>
+            <p className="text-sm font-medium">{deliverable.fileName ?? "Fichier joint"}</p>
+            <p className="text-[11px] text-muted-foreground">Cliquer pour telecharger</p>
           </div>
           <Button variant="outline" size="sm" asChild className="h-7 text-xs">
             <a href={deliverable.fileUrl} download>
               <Download className="mr-1 h-3 w-3" />
-              Download
+              Telecharger
             </a>
           </Button>
         </div>
@@ -126,7 +126,7 @@ export default async function DeliverableDetailPage({
       {deliverable.status === "IN_REVIEW" && (
         <div className="rounded-md border p-3">
           <p className="text-xs text-muted-foreground mb-3">
-            Review this deliverable and approve or request changes.
+            Revisez ce livrable et approuvez ou demandez des modifications.
           </p>
           <DeliverableReviewActions deliverableId={deliverable.id} />
         </div>
@@ -134,7 +134,7 @@ export default async function DeliverableDetailPage({
 
       {/* Discussion */}
       <div>
-        <h2 className="text-sm font-medium mb-3">Discussion</h2>
+        <h2 className="text-sm font-medium mb-3">Commentaires</h2>
         <div className="rounded-md border p-3">
           <CommentSection
             comments={deliverable.comments}

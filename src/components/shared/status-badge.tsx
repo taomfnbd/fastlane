@@ -34,6 +34,28 @@ const statusColorMap: Record<string, StatusColor> = {
   ENTERPRISE: "purple",
 };
 
+const statusLabelMap: Record<string, string> = {
+  DRAFT: "brouillon",
+  PREPARATION: "preparation",
+  ACTIVE: "actif",
+  REVIEW: "revision",
+  COMPLETED: "termine",
+  ARCHIVED: "archive",
+  PENDING_REVIEW: "en attente",
+  APPROVED: "approuve",
+  CHANGES_REQUESTED: "modifications demandees",
+  REVISED: "revise",
+  IN_REVIEW: "en revision",
+  DELIVERED: "livre",
+  PENDING: "en attente",
+  REJECTED: "rejete",
+  MODIFIED: "modifie",
+  FREE: "gratuit",
+  STARTER: "starter",
+  PRO: "pro",
+  ENTERPRISE: "enterprise",
+};
+
 interface StatusBadgeProps {
   status: string;
   className?: string;
@@ -41,7 +63,7 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
   const color = statusColorMap[status] ?? "gray";
-  const label = status.replace(/_/g, " ").toLowerCase();
+  const label = statusLabelMap[status] ?? status.replace(/_/g, " ").toLowerCase();
 
   return (
     <span className={cn("inline-flex items-center gap-1.5 text-xs text-muted-foreground", className)}>

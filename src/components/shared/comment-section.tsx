@@ -50,7 +50,7 @@ export function CommentSection({
 
     const result = await addComment(formData);
     if (result.success) {
-      toast.success("Comment added");
+      toast.success("Commentaire ajoute");
       setContent("");
     } else {
       toast.error(result.error);
@@ -71,7 +71,7 @@ export function CommentSection({
 
     const result = await addComment(formData);
     if (result.success) {
-      toast.success("Reply added");
+      toast.success("Reponse ajoutee");
       setReplyTo(null);
       setReplyContent("");
     } else {
@@ -84,7 +84,7 @@ export function CommentSection({
   return (
     <div className="space-y-3">
       {comments.length > 0 && (
-        <p className="text-[11px] text-muted-foreground">{comments.length} comment{comments.length !== 1 && "s"}</p>
+        <p className="text-[11px] text-muted-foreground">{comments.length} commentaire{comments.length !== 1 && "s"}</p>
       )}
 
       {/* Comments */}
@@ -98,9 +98,9 @@ export function CommentSection({
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium">{comment.author.name}</span>
                 <span className="text-[11px] text-muted-foreground/60">
-                  {new Date(comment.createdAt).toLocaleDateString("en-US", {
-                    month: "short",
+                  {new Date(comment.createdAt).toLocaleDateString("fr-FR", {
                     day: "numeric",
+                    month: "short",
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -112,7 +112,7 @@ export function CommentSection({
                 onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
               >
                 <Reply className="h-3 w-3" />
-                reply
+                repondre
               </button>
             </div>
           </div>
@@ -127,9 +127,9 @@ export function CommentSection({
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium">{reply.author.name}</span>
                   <span className="text-[11px] text-muted-foreground/60">
-                    {new Date(reply.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
+                    {new Date(reply.createdAt).toLocaleDateString("fr-FR", {
                       day: "numeric",
+                      month: "short",
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
@@ -144,7 +144,7 @@ export function CommentSection({
           {replyTo === comment.id && (
             <div className="ml-7 flex gap-2">
               <Textarea
-                placeholder="Reply..."
+                placeholder="Repondre..."
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
                 rows={1}
@@ -158,7 +158,7 @@ export function CommentSection({
                   onClick={() => handleReply(comment.id)}
                   disabled={loading || !replyContent.trim()}
                 >
-                  {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Reply"}
+                  {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Repondre"}
                 </Button>
                 <Button
                   size="sm"
@@ -166,7 +166,7 @@ export function CommentSection({
                   className="h-7 text-xs"
                   onClick={() => { setReplyTo(null); setReplyContent(""); }}
                 >
-                  Cancel
+                  Annuler
                 </Button>
               </div>
             </div>
@@ -177,7 +177,7 @@ export function CommentSection({
       {/* New comment */}
       <div className="flex gap-2 pt-1">
         <Textarea
-          placeholder="Write a comment..."
+          placeholder="Ecrire un commentaire..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={1}
@@ -191,7 +191,7 @@ export function CommentSection({
           disabled={loading || !content.trim()}
         >
           {loading && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
-          Post
+          Publier
         </Button>
       </div>
     </div>

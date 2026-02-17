@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Clock, Calendar } from "lucide-react";
 
-export const metadata = { title: "Timeline" };
+export const metadata = { title: "Chronologie" };
 
 export default async function PortalTimelinePage() {
   const session = await requireClient();
@@ -30,13 +30,13 @@ export default async function PortalTimelinePage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Timeline" />
+      <PageHeader title="Chronologie" />
 
       {eventCompanies.length === 0 ? (
         <EmptyState
           icon={Clock}
-          title="No events"
-          description="You are not part of any event yet."
+          title="Aucun evenement"
+          description="Vous ne participez a aucun evenement pour le moment."
         />
       ) : (
         <>
@@ -53,9 +53,9 @@ export default async function PortalTimelinePage() {
                 )}
                 <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-1">
                   <Calendar className="h-3 w-3" />
-                  {new Date(ec.event.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  {new Date(ec.event.startDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
                   {" — "}
-                  {new Date(ec.event.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  {new Date(ec.event.endDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
                 </div>
               </div>
             ))}
@@ -63,9 +63,9 @@ export default async function PortalTimelinePage() {
 
           {/* Activity feed */}
           <div>
-            <h2 className="text-sm font-medium mb-3">Activity</h2>
+            <h2 className="text-sm font-medium mb-3">Activite</h2>
             {activities.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-8 text-center">No activity yet.</p>
+              <p className="text-xs text-muted-foreground py-8 text-center">Aucune activite.</p>
             ) : (
               <div className="relative">
                 {activities.map((activity, i) => (
@@ -84,9 +84,9 @@ export default async function PortalTimelinePage() {
                         <span className="text-muted-foreground">{activity.message}</span>
                       </p>
                       <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                        {new Date(activity.createdAt).toLocaleDateString("en-US", {
-                          month: "short",
+                        {new Date(activity.createdAt).toLocaleDateString("fr-FR", {
                           day: "numeric",
+                          month: "short",
                           hour: "2-digit",
                           minute: "2-digit",
                         })}

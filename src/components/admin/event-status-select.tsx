@@ -2,22 +2,17 @@
 
 import { useState } from "react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { updateEvent } from "@/server/actions/events";
 
 const statuses = [
-  { value: "DRAFT", label: "Draft" },
+  { value: "DRAFT", label: "Brouillon" },
   { value: "PREPARATION", label: "Preparation" },
-  { value: "ACTIVE", label: "Active" },
-  { value: "REVIEW", label: "Review" },
-  { value: "COMPLETED", label: "Completed" },
-  { value: "ARCHIVED", label: "Archived" },
+  { value: "ACTIVE", label: "Actif" },
+  { value: "REVIEW", label: "Revision" },
+  { value: "COMPLETED", label: "Termine" },
+  { value: "ARCHIVED", label: "Archive" },
 ];
 
 interface EventStatusSelectProps {
@@ -30,15 +25,6 @@ export function EventStatusSelect({ eventId, currentStatus }: EventStatusSelectP
 
   async function handleChange(newStatus: string) {
     setLoading(true);
-
-    // We need to pass the full form data. To avoid extra fetching,
-    // we just update the status via a simple server action call.
-    const formData = new FormData();
-    formData.set("id", eventId);
-    formData.set("status", newStatus);
-
-    // We also need name/dates but those are required by the schema.
-    // Use a direct prisma call instead via a dedicated action.
     const res = await fetch(`/api/admin/events/${eventId}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -46,11 +32,10 @@ export function EventStatusSelect({ eventId, currentStatus }: EventStatusSelectP
     });
 
     if (res.ok) {
-      toast.success("Status updated");
+      toast.success("Statut mis a jour");
     } else {
-      toast.error("Failed to update status");
+      toast.error("Echec de la mise a jour");
     }
-
     setLoading(false);
   }
 
@@ -61,9 +46,7 @@ export function EventStatusSelect({ eventId, currentStatus }: EventStatusSelectP
       </SelectTrigger>
       <SelectContent>
         {statuses.map((s) => (
-          <SelectItem key={s.value} value={s.value}>
-            {s.label}
-          </SelectItem>
+          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
         ))}
       </SelectContent>
     </Select>

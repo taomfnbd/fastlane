@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Target } from "lucide-react";
 import Link from "next/link";
 
-export const metadata = { title: "Strategy" };
+export const metadata = { title: "Strategie" };
 
 export default async function PortalStrategyPage() {
   const session = await requireClient();
@@ -27,13 +27,13 @@ export default async function PortalStrategyPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Strategy" />
+      <PageHeader title="Strategie" />
 
       {strategies.length === 0 ? (
         <EmptyState
           icon={Target}
-          title="No strategies yet"
-          description="Strategies will appear here once the team shares them."
+          title="Aucune strategie"
+          description="Les strategies apparaitront ici une fois partagees par l'equipe."
         />
       ) : (
         <div className="rounded-md border divide-y">
@@ -62,7 +62,7 @@ export default async function PortalStrategyPage() {
                   <span>v{strategy.version}</span>
                   {totalItems > 0 && (
                     <>
-                      <span>{approvedItems}/{totalItems} items</span>
+                      <span>{approvedItems}/{totalItems} elements</span>
                       <div className="flex-1 max-w-24">
                         <div className="h-1 w-full rounded-full bg-muted">
                           <div

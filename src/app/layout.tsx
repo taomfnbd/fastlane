@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     default: "Fastlane",
     template: "%s — Fastlane",
   },
-  description: "Growth hacking event management platform",
+  description: "Plateforme de gestion d'evenements growth hacking",
 };
 
 export default function RootLayout({
@@ -28,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="fr" className="dark">
       <body className={`${inter.variable} ${mono.variable} font-sans antialiased`}>
         <TooltipProvider>
           {children}

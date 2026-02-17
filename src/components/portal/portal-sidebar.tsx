@@ -17,11 +17,11 @@ import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/auth-client";
 
 const navItems = [
-  { label: "Dashboard", href: "/portal/dashboard", icon: LayoutDashboard },
-  { label: "Strategy", href: "/portal/strategy", icon: Target },
-  { label: "Deliverables", href: "/portal/deliverables", icon: Package },
-  { label: "Timeline", href: "/portal/timeline", icon: Clock },
-  { label: "Settings", href: "/portal/settings", icon: Settings },
+  { label: "Tableau de bord", href: "/portal/dashboard", icon: LayoutDashboard },
+  { label: "Strategie", href: "/portal/strategy", icon: Target },
+  { label: "Livrables", href: "/portal/deliverables", icon: Package },
+  { label: "Chronologie", href: "/portal/timeline", icon: Clock },
+  { label: "Parametres", href: "/portal/settings", icon: Settings },
 ];
 
 interface PortalSidebarProps {
@@ -96,10 +96,10 @@ export function PortalSidebar({ user, companyName, collapsed, onToggle }: Portal
         <button
           onClick={() => signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/login"; } } })}
           className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors duration-150 hover:bg-accent/50 hover:text-foreground"
-          title={collapsed ? "Sign out" : undefined}
+          title={collapsed ? "Deconnexion" : undefined}
         >
           <LogOut className="h-4 w-4 shrink-0" />
-          {!collapsed && <span>Sign out</span>}
+          {!collapsed && <span>Deconnexion</span>}
         </button>
       </div>
     </aside>
