@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { requireClient } from "@/lib/auth-server";
-import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { EMPTY_STATES } from "@/lib/portal-constants";
@@ -32,7 +31,7 @@ export default async function PortalStrategyPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Strategie" />
+      <h1 className="text-lg font-semibold">Strategie</h1>
 
       {strategies.length === 0 ? (
         <EmptyState

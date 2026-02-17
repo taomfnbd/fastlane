@@ -50,7 +50,6 @@ export function CommentSection({
 
     const result = await addComment(formData);
     if (result.success) {
-      toast.success("Commentaire ajoute");
       setContent("");
     } else {
       toast.error(result.error);
@@ -71,7 +70,6 @@ export function CommentSection({
 
     const result = await addComment(formData);
     if (result.success) {
-      toast.success("Reponse ajoutee");
       setReplyTo(null);
       setReplyContent("");
     } else {
@@ -144,9 +142,15 @@ export function CommentSection({
           {replyTo === comment.id && (
             <div className="ml-7 flex gap-2">
               <Textarea
-                placeholder="Repondre..."
+                placeholder="Repondre... (Ctrl+Entree pour envoyer)"
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && replyContent.trim()) {
+                    e.preventDefault();
+                    handleReply(comment.id);
+                  }
+                }}
                 rows={1}
                 className="text-xs min-h-8"
                 disabled={loading}
@@ -177,9 +181,15 @@ export function CommentSection({
       {/* New comment */}
       <div className="flex gap-2 pt-1">
         <Textarea
-          placeholder="Ecrire un commentaire..."
+          placeholder="Ecrire un commentaire... (Ctrl+Entree pour envoyer)"
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && content.trim()) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
           rows={1}
           className="text-xs min-h-8"
           disabled={loading}
