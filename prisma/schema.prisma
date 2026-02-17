@@ -1,0 +1,347 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== AUTH (Better Auth) ====================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          UserRole  @default(CLIENT_MEMBER)
+  companyId     String?
+  company       Company?  @relation(fields: [companyId], references: [id])
+
+  // Better Auth relations
+  sessions      Session[]
+  accounts      Account[]
+
+  // App relations
+  comments      Comment[]
+  activities    Activity[]
+  notifications Notification[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([email])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Account {
+  id                    String  @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  CLIENT_ADMIN
+  CLIENT_MEMBER
+}
+
+enum EventStatus {
+  DRAFT
+  PREPARATION
+  ACTIVE
+  REVIEW
+  COMPLETED
+  ARCHIVED
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum StrategyStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  CHANGES_REQUESTED
+  REVISED
+}
+
+enum StrategyItemStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  MODIFIED
+}
+
+enum DeliverableType {
+  EMAIL_TEMPLATE
+  LANDING_PAGE
+  SOCIAL_POST
+  SCRIPT
+  DOCUMENT
+  AD_CREATIVE
+  OTHER
+}
+
+enum DeliverableStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  CHANGES_REQUESTED
+  REVISED
+  DELIVERED
+}
+
+enum ActivityType {
+  STRATEGY_CREATED
+  STRATEGY_UPDATED
+  STRATEGY_SUBMITTED
+  STRATEGY_APPROVED
+  STRATEGY_REJECTED
+  DELIVERABLE_CREATED
+  DELIVERABLE_SUBMITTED
+  DELIVERABLE_APPROVED
+  DELIVERABLE_REJECTED
+  COMMENT_ADDED
+  STATUS_CHANGED
+  FILE_UPLOADED
+}
+
+// ==================== EVENTS ====================
+
+model Event {
+  id          String      @id @default(cuid())
+  name        String
+  description String?     @db.Text
+  startDate   DateTime
+  endDate     DateTime
+  status      EventStatus @default(DRAFT)
+
+  companies   EventCompany[]
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model EventCompany {
+  id        String  @id @default(cuid())
+  eventId   String
+  event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  strategies   Strategy[]
+  deliverables Deliverable[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventId, companyId])
+  @@index([eventId])
+  @@index([companyId])
+}
+
+// ==================== COMPANIES ====================
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  logo        String?
+  website     String?
+  industry    String?
+  description String?  @db.Text
+
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
+  plan                 Plan    @default(FREE)
+
+  users  User[]
+  events EventCompany[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== STRATEGY ====================
+
+model Strategy {
+  id             String         @id @default(cuid())
+  title          String
+  description    String?        @db.Text
+  content        Json
+  status         StrategyStatus @default(DRAFT)
+  version        Int            @default(1)
+  eventCompanyId String
+  eventCompany   EventCompany   @relation(fields: [eventCompanyId], references: [id], onDelete: Cascade)
+
+  items      StrategyItem[]
+  comments   Comment[]
+  activities Activity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventCompanyId])
+  @@index([status])
+}
+
+model StrategyItem {
+  id         String             @id @default(cuid())
+  title      String
+  description String?           @db.Text
+  content    Json?
+  order      Int                @default(0)
+  status     StrategyItemStatus @default(PENDING)
+  strategyId String
+  strategy   Strategy           @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  comments   Comment[]
+
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([strategyId])
+}
+
+// ==================== DELIVERABLES ====================
+
+model Deliverable {
+  id             String            @id @default(cuid())
+  title          String
+  description    String?           @db.Text
+  type           DeliverableType
+  status         DeliverableStatus @default(DRAFT)
+  content        Json?
+  version        Int               @default(1)
+  fileUrl        String?
+  fileName       String?
+  eventCompanyId String
+  eventCompany   EventCompany      @relation(fields: [eventCompanyId], references: [id], onDelete: Cascade)
+
+  comments   Comment[]
+  activities Activity[]
+
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([eventCompanyId])
+  @@index([status])
+  @@index([type])
+}
+
+// ==================== COMMENTS ====================
+
+model Comment {
+  id             String    @id @default(cuid())
+  content        String    @db.Text
+  authorId       String
+  author         User      @relation(fields: [authorId], references: [id])
+
+  strategyId     String?
+  strategy       Strategy? @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  strategyItemId String?
+  strategyItem   StrategyItem? @relation(fields: [strategyItemId], references: [id], onDelete: Cascade)
+  deliverableId  String?
+  deliverable    Deliverable? @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+
+  parentId       String?
+  parent         Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies        Comment[] @relation("CommentReplies")
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([strategyId])
+  @@index([strategyItemId])
+  @@index([deliverableId])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+// ==================== ACTIVITY LOG ====================
+
+model Activity {
+  id          String       @id @default(cuid())
+  type        ActivityType
+  message     String
+  metadata    Json?
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+
+  strategyId    String?
+  strategy      Strategy?    @relation(fields: [strategyId], references: [id], onDelete: SetNull)
+  deliverableId String?
+  deliverable   Deliverable? @relation(fields: [deliverableId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime     @default(now())
+
+  @@index([userId])
+  @@index([strategyId])
+  @@index([deliverableId])
+  @@index([createdAt])
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
