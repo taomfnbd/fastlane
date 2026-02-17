@@ -3,14 +3,25 @@
 import { useState } from "react";
 import { PortalSidebar } from "./portal-sidebar";
 import { AppHeader } from "@/components/shared/app-header";
+import { NotificationBell } from "./notification-bell";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  link: string | null;
+  read: boolean;
+  createdAt: string;
+}
 
 interface PortalShellProps {
   user: { name: string; email: string };
   companyName: string;
   activeEventName: string | null;
-  notificationCount: number;
+  notifications: Notification[];
+  unreadCount: number;
   pendingStrategies: number;
   pendingDeliverables: number;
   children: React.ReactNode;
@@ -20,7 +31,8 @@ export function PortalShell({
   user,
   companyName,
   activeEventName,
-  notificationCount,
+  notifications,
+  unreadCount,
   pendingStrategies,
   pendingDeliverables,
   children,
@@ -67,8 +79,13 @@ export function PortalShell({
       >
         <AppHeader
           user={user}
-          notificationCount={notificationCount}
           onMobileMenuToggle={() => setMobileOpen(true)}
+          notificationSlot={
+            <NotificationBell
+              notifications={notifications}
+              unreadCount={unreadCount}
+            />
+          }
         />
         <main className="px-4 py-4 lg:px-6">{children}</main>
       </div>

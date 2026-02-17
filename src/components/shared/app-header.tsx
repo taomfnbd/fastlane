@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 interface AppHeaderProps {
   user: { name: string; email: string };
   notificationCount?: number;
+  notificationSlot?: React.ReactNode;
   onMobileMenuToggle?: () => void;
 }
 
@@ -24,7 +25,7 @@ const labelMap: Record<string, string> = {
   timeline: "Activite",
 };
 
-export function AppHeader({ user, notificationCount = 0, onMobileMenuToggle }: AppHeaderProps) {
+export function AppHeader({ user, notificationCount = 0, notificationSlot, onMobileMenuToggle }: AppHeaderProps) {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
 
@@ -74,19 +75,21 @@ export function AppHeader({ user, notificationCount = 0, onMobileMenuToggle }: A
           <Search className="h-3.5 w-3.5" />
         </Button>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground relative"
-          title="Notifications"
-        >
-          <Bell className="h-3.5 w-3.5" />
-          {notificationCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">
-              {notificationCount > 9 ? "9+" : notificationCount}
-            </span>
-          )}
-        </Button>
+        {notificationSlot ?? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground relative"
+            title="Notifications"
+          >
+            <Bell className="h-3.5 w-3.5" />
+            {notificationCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">
+                {notificationCount > 9 ? "9+" : notificationCount}
+              </span>
+            )}
+          </Button>
+        )}
 
         <div className="ml-1 flex h-6 w-6 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
           {user.name.charAt(0).toUpperCase()}

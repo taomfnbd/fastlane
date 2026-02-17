@@ -23,9 +23,19 @@ export default async function PortalLayout({
     redirect("/login");
   }
 
-  const [notificationCount, eventCompanies] = await Promise.all([
-    prisma.notification.count({
-      where: { userId: session.user.id, read: false },
+  const [notifications, eventCompanies] = await Promise.all([
+    prisma.notification.findMany({
+      where: { userId: session.user.id },
+      take: 10,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        message: true,
+        link: true,
+        read: true,
+        createdAt: true,
+      },
     }),
     prisma.eventCompany.findMany({
       where: { companyId: user.company.id },
@@ -46,6 +56,13 @@ export default async function PortalLayout({
   const activeEvent = eventCompanies.find((ec) => ec.event.status === "ACTIVE");
   const pendingStrategies = eventCompanies.reduce((sum, ec) => sum + ec.strategies.length, 0);
   const pendingDeliverables = eventCompanies.reduce((sum, ec) => sum + ec.deliverables.length, 0);
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // Serialize dates for client components
+  const serializedNotifications = notifications.map((n) => ({
+    ...n,
+    createdAt: n.createdAt.toISOString(),
+  }));
 
   return (
     <PortalShell
@@ -55,7 +72,8 @@ export default async function PortalLayout({
       }}
       companyName={user.company.name}
       activeEventName={activeEvent?.event.name ?? null}
-      notificationCount={notificationCount}
+      notifications={serializedNotifications}
+      unreadCount={unreadCount}
       pendingStrategies={pendingStrategies}
       pendingDeliverables={pendingDeliverables}
     >
