@@ -1,13 +1,12 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireClient } from "@/lib/auth-server";
-import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CommentSection } from "@/components/shared/comment-section";
+import { StrategyItemCard } from "@/components/portal/strategy-item-card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertTriangle, CheckCircle2, MessageSquare } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
-import { StrategyItemReview } from "@/components/portal/strategy-item-review";
 
 export async function generateMetadata({ params }: { params: Promise<{ strategyId: string }> }) {
   const { strategyId } = await params;
@@ -78,6 +77,7 @@ export default async function StrategyDetailPage({
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
         <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 h-7 text-xs text-muted-foreground">
           <Link href="/portal/strategy">
@@ -85,10 +85,17 @@ export default async function StrategyDetailPage({
             Strategie
           </Link>
         </Button>
-        <PageHeader
-          title={strategy.title}
-          description={strategy.description ?? undefined}
-        />
+        <h1 className="text-lg font-semibold">{strategy.title}</h1>
+        {strategy.description && (
+          <p className="text-sm text-muted-foreground mt-0.5">{strategy.description}</p>
+        )}
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
+          <StatusBadge status={strategy.status} />
+          <span>{strategy.eventCompany.event.name}</span>
+          {totalItems > 0 && (
+            <span>{approvedItems} sur {totalItems} valides</span>
+          )}
+        </div>
       </div>
 
       {/* Contextual banner */}
@@ -109,78 +116,34 @@ export default async function StrategyDetailPage({
         </div>
       )}
 
-      {/* Meta */}
-      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-        <StatusBadge status={strategy.status} />
-        <span>{strategy.eventCompany.event.name}</span>
-        <span>v{strategy.version}</span>
-        {totalItems > 0 && <span>{approvedItems}/{totalItems} approuves</span>}
-      </div>
-
       {/* Progress */}
       {totalItems > 0 && (
-        <div className="h-1 w-full rounded-full bg-muted">
+        <div className="h-1.5 w-full rounded-full bg-muted">
           <div
-            className="h-1 rounded-full bg-emerald-500 transition-all"
+            className="h-1.5 rounded-full bg-emerald-500 transition-all"
             style={{ width: `${pct}%` }}
           />
         </div>
       )}
 
-      {/* Strategy Items */}
-      <div>
-        <h2 className="text-sm font-medium mb-3">Elements</h2>
-        {strategy.items.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-8 text-center">Aucun element.</p>
-        ) : (
-          <div className="space-y-3">
-            {strategy.items.map((item, index) => (
-              <div key={item.id} className="rounded-md border">
-                <div className="flex items-start justify-between px-3 py-2.5">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">
-                      <span className="text-muted-foreground tabular-nums">{index + 1}.</span>{" "}
-                      {item.title}
-                    </p>
-                    {item.description && (
-                      <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap pl-5">{item.description}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-3">
-                    {item._count.comments > 0 && (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <MessageSquare className="h-3 w-3" />
-                        {item._count.comments}
-                      </span>
-                    )}
-                    <StatusBadge status={item.status} />
-                  </div>
-                </div>
+      {/* Strategy Items — Collapsible cards */}
+      {strategy.items.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-8 text-center">Aucun element.</p>
+      ) : (
+        <div className="space-y-2">
+          {strategy.items.map((item, index) => (
+            <StrategyItemCard
+              key={item.id}
+              item={item}
+              index={index}
+              strategyId={strategy.id}
+              strategyStatus={strategy.status}
+            />
+          ))}
+        </div>
+      )}
 
-                {/* Review actions */}
-                {strategy.status === "PENDING_REVIEW" && item.status === "PENDING" && (
-                  <div className="px-3 py-2 border-t">
-                    <StrategyItemReview itemId={item.id} />
-                  </div>
-                )}
-
-                {/* Item comments */}
-                {item.comments.length > 0 && (
-                  <div className="px-3 py-2 border-t">
-                    <CommentSection
-                      comments={item.comments}
-                      strategyItemId={item.id}
-                      strategyId={strategy.id}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Discussion */}
+      {/* Global comments */}
       <div>
         <h2 className="text-sm font-medium mb-3">Commentaires</h2>
         <div className="rounded-md border p-3">
