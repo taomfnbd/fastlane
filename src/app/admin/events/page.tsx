@@ -3,9 +3,7 @@ import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Calendar, Plus, Building2 } from "lucide-react";
+import { Calendar } from "lucide-react";
 import Link from "next/link";
 import { CreateEventDialog } from "@/components/admin/create-event-dialog";
 
@@ -24,10 +22,9 @@ export default async function EventsPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="Events"
-        description="Manage your growth hacking events"
         action={<CreateEventDialog />}
       />
 
@@ -35,48 +32,48 @@ export default async function EventsPage() {
         <EmptyState
           icon={Calendar}
           title="No events yet"
-          description="Create your first growth hacking event to start managing strategies and deliverables."
+          description="Create your first event to get started."
           action={<CreateEventDialog />}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {events.map((event) => (
-            <Link key={event.id} href={`/admin/events/${event.id}`}>
-              <Card className="hover:shadow-md transition-shadow h-full">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <h3 className="font-semibold">{event.name}</h3>
-                      {event.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {event.description}
-                        </p>
-                      )}
-                    </div>
+        <div className="rounded-md border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-xs text-muted-foreground">
+                <th className="text-left font-medium px-3 py-2">Name</th>
+                <th className="text-left font-medium px-3 py-2 hidden sm:table-cell">Dates</th>
+                <th className="text-left font-medium px-3 py-2 hidden md:table-cell">Companies</th>
+                <th className="text-left font-medium px-3 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {events.map((event) => (
+                <tr key={event.id} className="hover:bg-accent/50 transition-colors">
+                  <td className="px-3 py-2.5">
+                    <Link href={`/admin/events/${event.id}`} className="font-medium hover:underline">
+                      {event.name}
+                    </Link>
+                    {event.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{event.description}</p>
+                    )}
+                  </td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground hidden sm:table-cell whitespace-nowrap">
+                    {new Date(event.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    {" — "}
+                    {new Date(event.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground hidden md:table-cell">
+                    {event.companies.length === 0
+                      ? "—"
+                      : event.companies.map((ec) => ec.company.name).join(", ")}
+                  </td>
+                  <td className="px-3 py-2.5">
                     <StatusBadge status={event.status} />
-                  </div>
-                  <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {new Date(event.startDate).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })}{" "}
-                      -{" "}
-                      {new Date(event.endDate).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Building2 className="h-3.5 w-3.5" />
-                      {event.companies.length} companies
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

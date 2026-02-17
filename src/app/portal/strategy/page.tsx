@@ -3,7 +3,6 @@ import { requireClient } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Card, CardContent } from "@/components/ui/card";
 import { Target } from "lucide-react";
 import Link from "next/link";
 
@@ -27,58 +26,54 @@ export default async function PortalStrategyPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Strategy"
-        description="Review and approve growth strategies proposed by the Fastlane team"
-      />
+    <div className="space-y-4">
+      <PageHeader title="Strategy" />
 
       {strategies.length === 0 ? (
         <EmptyState
           icon={Target}
           title="No strategies yet"
-          description="Your growth strategies will appear here once the Fastlane team shares them with you."
+          description="Strategies will appear here once the team shares them."
         />
       ) : (
-        <div className="grid gap-4">
+        <div className="rounded-md border divide-y">
           {strategies.map((strategy) => {
             const approvedItems = strategy.items.filter((i) => i.status === "APPROVED").length;
             const totalItems = strategy.items.length;
+            const pct = totalItems > 0 ? Math.round((approvedItems / totalItems) * 100) : 0;
 
             return (
-              <Link key={strategy.id} href={`/portal/strategy/${strategy.id}`}>
-                <Card className="hover:shadow-md transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold">{strategy.title}</h3>
-                        {strategy.description && (
-                          <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-                            {strategy.description}
-                          </p>
-                        )}
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {strategy.eventCompany.event.name} &middot; v{strategy.version}
-                        </p>
-                      </div>
-                      <StatusBadge status={strategy.status} />
-                    </div>
-                    {totalItems > 0 && (
-                      <div className="mt-4">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                          <span>Items reviewed</span>
-                          <span>{approvedItems}/{totalItems}</span>
-                        </div>
-                        <div className="h-1.5 w-full rounded-full bg-muted">
+              <Link
+                key={strategy.id}
+                href={`/portal/strategy/${strategy.id}`}
+                className="block px-3 py-3 hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{strategy.title}</p>
+                    {strategy.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{strategy.description}</p>
+                    )}
+                  </div>
+                  <StatusBadge status={strategy.status} className="shrink-0 ml-3" />
+                </div>
+                <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
+                  <span>{strategy.eventCompany.event.name}</span>
+                  <span>v{strategy.version}</span>
+                  {totalItems > 0 && (
+                    <>
+                      <span>{approvedItems}/{totalItems} items</span>
+                      <div className="flex-1 max-w-24">
+                        <div className="h-1 w-full rounded-full bg-muted">
                           <div
-                            className="h-1.5 rounded-full bg-emerald-500 transition-all"
-                            style={{ width: `${totalItems > 0 ? (approvedItems / totalItems) * 100 : 0}%` }}
+                            className="h-1 rounded-full bg-emerald-500 transition-all"
+                            style={{ width: `${pct}%` }}
                           />
                         </div>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                    </>
+                  )}
+                </div>
               </Link>
             );
           })}

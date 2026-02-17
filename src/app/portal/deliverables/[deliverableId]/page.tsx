@@ -4,8 +4,6 @@ import { requireClient } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CommentSection } from "@/components/shared/comment-section";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download } from "lucide-react";
 import Link from "next/link";
@@ -52,20 +50,17 @@ export default async function DeliverableDetailPage({
   });
 
   if (!deliverable) notFound();
-
-  if (deliverable.eventCompany.company.id !== session.companyId) {
-    notFound();
-  }
+  if (deliverable.eventCompany.company.id !== session.companyId) notFound();
 
   const content = deliverable.content as Record<string, unknown> | null;
 
   return (
     <div className="space-y-6">
       <div>
-        <Button variant="ghost" size="sm" asChild className="mb-2">
+        <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 h-7 text-xs text-muted-foreground">
           <Link href="/portal/deliverables">
             <ArrowLeft className="mr-1 h-3 w-3" />
-            Back to Deliverables
+            Deliverables
           </Link>
         </Button>
         <PageHeader
@@ -74,92 +69,79 @@ export default async function DeliverableDetailPage({
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-sm">
+      {/* Meta */}
+      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <StatusBadge status={deliverable.status} />
-        <Badge variant="outline">{deliverable.type.replace(/_/g, " ")}</Badge>
-        <span className="text-muted-foreground">
-          {deliverable.eventCompany.event.name} &middot; Version{" "}
-          {deliverable.version}
-        </span>
+        <span>{deliverable.type.replace(/_/g, " ").toLowerCase()}</span>
+        <span>{deliverable.eventCompany.event.name}</span>
+        <span>v{deliverable.version}</span>
       </div>
 
       {/* Content preview */}
       {content && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Preview</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div>
+          <h2 className="text-sm font-medium mb-3">Preview</h2>
+          <div className="rounded-md border p-3">
             {deliverable.type === "EMAIL_TEMPLATE" && content.subject ? (
               <div className="space-y-3">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground">Subject</p>
-                  <p className="text-sm font-medium">{String(content.subject)}</p>
+                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Subject</p>
+                  <p className="text-sm font-medium mt-0.5">{String(content.subject)}</p>
                 </div>
                 {content.body ? (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">Body</p>
-                    <div className="mt-1 rounded-lg border bg-muted/30 p-4">
-                      <pre className="text-sm whitespace-pre-wrap font-sans">
-                        {String(content.body)}
-                      </pre>
-                    </div>
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Body</p>
+                    <pre className="mt-1 text-sm whitespace-pre-wrap font-sans text-muted-foreground">
+                      {String(content.body)}
+                    </pre>
                   </div>
                 ) : null}
               </div>
             ) : (
-              <pre className="text-sm whitespace-pre-wrap">
+              <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
                 {JSON.stringify(content, null, 2)}
               </pre>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* File download */}
       {deliverable.fileUrl && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">{deliverable.fileName ?? "Attached file"}</p>
-                <p className="text-xs text-muted-foreground">Click to download</p>
-              </div>
-              <Button variant="outline" size="sm" asChild>
-                <a href={deliverable.fileUrl} download>
-                  <Download className="mr-1 h-3 w-3" />
-                  Download
-                </a>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
+          <div>
+            <p className="text-sm font-medium">{deliverable.fileName ?? "Attached file"}</p>
+            <p className="text-[11px] text-muted-foreground">Click to download</p>
+          </div>
+          <Button variant="outline" size="sm" asChild className="h-7 text-xs">
+            <a href={deliverable.fileUrl} download>
+              <Download className="mr-1 h-3 w-3" />
+              Download
+            </a>
+          </Button>
+        </div>
       )}
 
       {/* Review actions */}
       {deliverable.status === "IN_REVIEW" && (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-3">
-              Review this deliverable and approve or request changes.
-            </p>
-            <DeliverableReviewActions deliverableId={deliverable.id} />
-          </CardContent>
-        </Card>
+        <div className="rounded-md border p-3">
+          <p className="text-xs text-muted-foreground mb-3">
+            Review this deliverable and approve or request changes.
+          </p>
+          <DeliverableReviewActions deliverableId={deliverable.id} />
+        </div>
       )}
 
-      {/* Comments */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Discussion</CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Discussion */}
+      <div>
+        <h2 className="text-sm font-medium mb-3">Discussion</h2>
+        <div className="rounded-md border p-3">
           <CommentSection
             comments={deliverable.comments}
             deliverableId={deliverable.id}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

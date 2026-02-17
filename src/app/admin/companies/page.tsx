@@ -3,8 +3,7 @@ import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Card, CardContent } from "@/components/ui/card";
-import { Building2, Users, Globe } from "lucide-react";
+import { Building2 } from "lucide-react";
 import Link from "next/link";
 import { CreateCompanyDialog } from "@/components/admin/create-company-dialog";
 
@@ -18,7 +17,7 @@ export default async function CompaniesPage() {
     include: {
       users: { select: { id: true } },
       events: {
-        include: { event: { select: { name: true, status: true } } },
+        include: { event: { select: { name: true } } },
         orderBy: { event: { startDate: "desc" } },
         take: 1,
       },
@@ -26,10 +25,9 @@ export default async function CompaniesPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="Companies"
-        description="Manage client companies"
         action={<CreateCompanyDialog />}
       />
 
@@ -37,54 +35,50 @@ export default async function CompaniesPage() {
         <EmptyState
           icon={Building2}
           title="No companies yet"
-          description="Add your first client company to start collaborating."
+          description="Add your first client company."
           action={<CreateCompanyDialog />}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {companies.map((company) => (
-            <Link key={company.id} href={`/admin/companies/${company.id}`}>
-              <Card className="hover:shadow-md transition-shadow h-full">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-semibold">
-                        {company.name.charAt(0)}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">{company.name}</h3>
-                        {company.industry && (
-                          <p className="text-xs text-muted-foreground">
-                            {company.industry}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <StatusBadge status={company.plan} />
-                  </div>
-                  <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" />
-                      {company.users.length} members
-                    </div>
+        <div className="rounded-md border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-xs text-muted-foreground">
+                <th className="text-left font-medium px-3 py-2">Company</th>
+                <th className="text-left font-medium px-3 py-2 hidden sm:table-cell">Industry</th>
+                <th className="text-left font-medium px-3 py-2 hidden md:table-cell">Members</th>
+                <th className="text-left font-medium px-3 py-2 hidden lg:table-cell">Latest event</th>
+                <th className="text-left font-medium px-3 py-2">Plan</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {companies.map((company) => (
+                <tr key={company.id} className="hover:bg-accent/50 transition-colors">
+                  <td className="px-3 py-2.5">
+                    <Link href={`/admin/companies/${company.id}`} className="font-medium hover:underline">
+                      {company.name}
+                    </Link>
                     {company.website && (
-                      <div className="flex items-center gap-1">
-                        <Globe className="h-3.5 w-3.5" />
-                        <span className="truncate max-w-[150px]">
-                          {company.website.replace(/https?:\/\//, "")}
-                        </span>
-                      </div>
+                      <p className="text-[11px] text-muted-foreground truncate max-w-[200px]">
+                        {company.website.replace(/https?:\/\//, "")}
+                      </p>
                     )}
-                  </div>
-                  {company.events[0] && (
-                    <div className="mt-3 text-xs text-muted-foreground">
-                      Latest event: {company.events[0].event.name}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  </td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground hidden sm:table-cell">
+                    {company.industry ?? "—"}
+                  </td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground hidden md:table-cell tabular-nums">
+                    {company.users.length}
+                  </td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground hidden lg:table-cell">
+                    {company.events[0]?.event.name ?? "—"}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <StatusBadge status={company.plan} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

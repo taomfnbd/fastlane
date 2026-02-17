@@ -1,11 +1,14 @@
 import { requireClient } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 
 export const metadata = { title: "Settings" };
+
+const roleDot: Record<string, string> = {
+  CLIENT_ADMIN: "bg-emerald-500",
+  CLIENT_MEMBER: "bg-muted-foreground/50",
+};
 
 export default async function PortalSettingsPage() {
   const session = await requireClient();
@@ -24,67 +27,59 @@ export default async function PortalSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Settings" description="Company profile and team" />
+      <PageHeader title="Settings" />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Company Profile</CardTitle>
-            <CardDescription>Your company information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Name</p>
-              <p className="font-medium">{company.name}</p>
+        {/* Company info */}
+        <div>
+          <h2 className="text-sm font-medium mb-3">Company</h2>
+          <div className="rounded-md border divide-y">
+            <div className="px-3 py-2.5 flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Name</span>
+              <span className="text-sm font-medium">{company.name}</span>
             </div>
             {company.industry && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Industry</p>
-                <p>{company.industry}</p>
+              <div className="px-3 py-2.5 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Industry</span>
+                <span className="text-sm">{company.industry}</span>
               </div>
             )}
             {company.website && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Website</p>
-                <p>{company.website}</p>
+              <div className="px-3 py-2.5 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Website</span>
+                <span className="text-sm">{company.website}</span>
               </div>
             )}
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Plan</p>
+            <div className="px-3 py-2.5 flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Plan</span>
               <StatusBadge status={company.plan} />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Team Members</CardTitle>
-            <CardDescription>{company.users.length} members</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {company.users.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{user.name}</p>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
-                    </div>
+        {/* Team */}
+        <div>
+          <h2 className="text-sm font-medium mb-3">Team ({company.users.length})</h2>
+          <div className="rounded-md border divide-y">
+            {company.users.map((user) => (
+              <div key={user.id} className="flex items-center justify-between px-3 py-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
+                    {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {user.role === "CLIENT_ADMIN" ? "Admin" : "Member"}
-                  </Badge>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{user.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
+                  <span className={`h-1.5 w-1.5 rounded-full ${roleDot[user.role] ?? "bg-muted-foreground/50"}`} />
+                  {user.role === "CLIENT_ADMIN" ? "admin" : "member"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

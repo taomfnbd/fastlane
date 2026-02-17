@@ -1,14 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users, Mail } from "lucide-react";
+import { Users } from "lucide-react";
 import { InviteUserDialog } from "@/components/admin/invite-user-dialog";
 
 export const metadata = { title: "Users" };
+
+const roleDot: Record<string, string> = {
+  SUPER_ADMIN: "bg-purple-500",
+  ADMIN: "bg-blue-500",
+  CLIENT_ADMIN: "bg-emerald-500",
+  CLIENT_MEMBER: "bg-muted-foreground/50",
+};
 
 export default async function UsersPage() {
   await requireAdmin();
@@ -20,18 +24,10 @@ export default async function UsersPage() {
     },
   });
 
-  const roleColors: Record<string, string> = {
-    SUPER_ADMIN: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-    ADMIN: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-    CLIENT_ADMIN: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-    CLIENT_MEMBER: "bg-muted text-muted-foreground",
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="Users"
-        description="Manage platform users"
         action={<InviteUserDialog />}
       />
 
@@ -39,49 +35,48 @@ export default async function UsersPage() {
         <EmptyState
           icon={Users}
           title="No users yet"
-          description="Invite users to start collaborating."
+          description="Invite users to get started."
           action={<InviteUserDialog />}
         />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>All Users ({users.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
+        <div className="rounded-md border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-xs text-muted-foreground">
+                <th className="text-left font-medium px-3 py-2">User</th>
+                <th className="text-left font-medium px-3 py-2 hidden sm:table-cell">Email</th>
+                <th className="text-left font-medium px-3 py-2 hidden md:table-cell">Company</th>
+                <th className="text-left font-medium px-3 py-2">Role</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
               {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center gap-4 rounded-lg border p-3"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{user.name}</p>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Mail className="h-3 w-3" />
-                      {user.email}
+                <tr key={user.id} className="hover:bg-accent/50 transition-colors">
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-medium">{user.name}</span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {user.company && (
-                      <Badge variant="outline" className="text-xs">
-                        {user.company.name}
-                      </Badge>
-                    )}
-                    <Badge
-                      variant="secondary"
-                      className={`text-xs ${roleColors[user.role] ?? ""}`}
-                    >
-                      {user.role.replace(/_/g, " ")}
-                    </Badge>
-                  </div>
-                </div>
+                  </td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground hidden sm:table-cell">
+                    {user.email}
+                  </td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground hidden md:table-cell">
+                    {user.company?.name ?? "—"}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${roleDot[user.role] ?? "bg-muted-foreground/50"}`} />
+                      {user.role.replace(/_/g, " ").toLowerCase()}
+                    </span>
+                  </td>
+                </tr>
               ))}
-            </div>
-          </CardContent>
-        </Card>
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

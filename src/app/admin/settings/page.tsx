@@ -1,6 +1,5 @@
 import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata = { title: "Settings" };
 
@@ -9,39 +8,22 @@ export default async function AdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Settings"
-        description="Platform configuration"
-      />
+      <PageHeader title="Settings" />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>General</CardTitle>
-            <CardDescription>
-              General platform settings and configuration.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Platform settings will be available here.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="rounded-md border p-4 space-y-2">
+          <h2 className="text-sm font-medium">General</h2>
+          <p className="text-xs text-muted-foreground">
+            Platform settings and configuration will be available here.
+          </p>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Billing</CardTitle>
-            <CardDescription>
-              Stripe integration and subscription management.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Billing configuration will be available here once Stripe is connected.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="rounded-md border p-4 space-y-2">
+          <h2 className="text-sm font-medium">Billing</h2>
+          <p className="text-xs text-muted-foreground">
+            Stripe integration and subscription management will be available once connected.
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -4,9 +4,8 @@ import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target, ArrowLeft, Send } from "lucide-react";
+import { Target, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { CreateStrategyDialog } from "@/components/admin/create-strategy-dialog";
 import { SubmitStrategyButton } from "@/components/admin/submit-strategy-button";
@@ -48,22 +47,19 @@ export default async function EventStrategyPage({
   return (
     <div className="space-y-6">
       <div>
-        <Button variant="ghost" size="sm" asChild className="mb-2">
+        <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 h-7 text-xs text-muted-foreground">
           <Link href={`/admin/events/${eventId}`}>
             <ArrowLeft className="mr-1 h-3 w-3" />
-            Back to Event
+            {event.name}
           </Link>
         </Button>
-        <PageHeader
-          title="Strategy Management"
-          description={`${event.name} — Manage growth strategies`}
-        />
+        <PageHeader title="Strategy" />
       </div>
 
       {event.companies.map((ec) => (
-        <div key={ec.id} className="space-y-4">
+        <div key={ec.id} className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{ec.company.name}</h2>
+            <h2 className="text-sm font-medium">{ec.company.name}</h2>
             <CreateStrategyDialog eventCompanyId={ec.id} companyName={ec.company.name} />
           </div>
 
@@ -72,59 +68,50 @@ export default async function EventStrategyPage({
               icon={Target}
               title="No strategies yet"
               description={`Create a strategy for ${ec.company.name}.`}
-              action={
-                <CreateStrategyDialog
-                  eventCompanyId={ec.id}
-                  companyName={ec.company.name}
-                />
-              }
+              action={<CreateStrategyDialog eventCompanyId={ec.id} companyName={ec.company.name} />}
             />
           ) : (
             ec.strategies.map((strategy) => (
-              <Card key={strategy.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-base">{strategy.title}</CardTitle>
-                      {strategy.description && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {strategy.description}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <StatusBadge status={strategy.status} />
-                      {strategy.status === "DRAFT" && (
-                        <SubmitStrategyButton strategyId={strategy.id} />
-                      )}
-                    </div>
+              <div key={strategy.id} className="rounded-md border">
+                {/* Strategy header */}
+                <div className="flex items-center justify-between px-3 py-2.5 border-b">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{strategy.title}</p>
+                    {strategy.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{strategy.description}</p>
+                    )}
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {/* Items list */}
+                  <div className="flex items-center gap-2 shrink-0 ml-3">
+                    <StatusBadge status={strategy.status} />
+                    {strategy.status === "DRAFT" && (
+                      <SubmitStrategyButton strategyId={strategy.id} />
+                    )}
+                  </div>
+                </div>
+
+                {/* Items */}
+                <div className="divide-y">
                   {strategy.items.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between rounded-lg border p-3"
-                    >
-                      <div>
-                        <p className="text-sm font-medium">
-                          {index + 1}. {item.title}
+                    <div key={item.id} className="flex items-center justify-between px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="text-sm">
+                          <span className="text-muted-foreground tabular-nums">{index + 1}.</span>{" "}
+                          {item.title}
                         </p>
                         {item.description && (
-                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                            {item.description}
-                          </p>
+                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5 pl-5">{item.description}</p>
                         )}
                       </div>
-                      <StatusBadge status={item.status} />
+                      <StatusBadge status={item.status} className="shrink-0 ml-3" />
                     </div>
                   ))}
+                </div>
 
-                  {/* Add item */}
+                {/* Add item */}
+                <div className="px-3 py-2 border-t">
                   <AddStrategyItemDialog strategyId={strategy.id} />
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))
           )}
         </div>

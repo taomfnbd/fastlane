@@ -4,8 +4,6 @@ import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Package, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -45,26 +43,20 @@ export default async function EventDeliverablesPage({
   return (
     <div className="space-y-6">
       <div>
-        <Button variant="ghost" size="sm" asChild className="mb-2">
+        <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 h-7 text-xs text-muted-foreground">
           <Link href={`/admin/events/${eventId}`}>
             <ArrowLeft className="mr-1 h-3 w-3" />
-            Back to Event
+            {event.name}
           </Link>
         </Button>
-        <PageHeader
-          title="Deliverables Management"
-          description={`${event.name} — Manage deliverables`}
-        />
+        <PageHeader title="Deliverables" />
       </div>
 
       {event.companies.map((ec) => (
-        <div key={ec.id} className="space-y-4">
+        <div key={ec.id} className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{ec.company.name}</h2>
-            <CreateDeliverableDialog
-              eventCompanyId={ec.id}
-              companyName={ec.company.name}
-            />
+            <h2 className="text-sm font-medium">{ec.company.name}</h2>
+            <CreateDeliverableDialog eventCompanyId={ec.id} companyName={ec.company.name} />
           </div>
 
           {ec.deliverables.length === 0 ? (
@@ -72,45 +64,47 @@ export default async function EventDeliverablesPage({
               icon={Package}
               title="No deliverables yet"
               description={`Create a deliverable for ${ec.company.name}.`}
-              action={
-                <CreateDeliverableDialog
-                  eventCompanyId={ec.id}
-                  companyName={ec.company.name}
-                />
-              }
+              action={<CreateDeliverableDialog eventCompanyId={ec.id} companyName={ec.company.name} />}
             />
           ) : (
-            <div className="grid gap-3">
-              {ec.deliverables.map((deliverable) => (
-                <Card key={deliverable.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div>
+            <div className="rounded-md border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-xs text-muted-foreground">
+                    <th className="text-left font-medium px-3 py-2">Title</th>
+                    <th className="text-left font-medium px-3 py-2 hidden sm:table-cell">Type</th>
+                    <th className="text-left font-medium px-3 py-2 hidden md:table-cell">Version</th>
+                    <th className="text-left font-medium px-3 py-2">Status</th>
+                    <th className="px-3 py-2 w-8"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {ec.deliverables.map((deliverable) => (
+                    <tr key={deliverable.id} className="hover:bg-accent/50 transition-colors">
+                      <td className="px-3 py-2.5">
                         <p className="font-medium">{deliverable.title}</p>
                         {deliverable.description && (
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                            {deliverable.description}
-                          </p>
+                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{deliverable.description}</p>
                         )}
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="outline" className="text-xs">
-                            {deliverable.type.replace(/_/g, " ")}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            v{deliverable.version}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-muted-foreground hidden sm:table-cell whitespace-nowrap">
+                        {deliverable.type.replace(/_/g, " ").toLowerCase()}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-muted-foreground hidden md:table-cell tabular-nums">
+                        v{deliverable.version}
+                      </td>
+                      <td className="px-3 py-2.5">
                         <StatusBadge status={deliverable.status} />
+                      </td>
+                      <td className="px-3 py-2.5">
                         {deliverable.status === "DRAFT" && (
                           <SubmitDeliverableButton deliverableId={deliverable.id} />
                         )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
