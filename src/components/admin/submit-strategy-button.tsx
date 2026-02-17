@@ -1,0 +1,33 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { Send, Loader2 } from "lucide-react";
+import { submitStrategyForReview } from "@/server/actions/strategy";
+
+export function SubmitStrategyButton({ strategyId }: { strategyId: string }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit() {
+    setLoading(true);
+    const result = await submitStrategyForReview(strategyId);
+    if (result.success) {
+      toast.success("Strategy submitted for review");
+    } else {
+      toast.error(result.error);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <Button size="sm" variant="outline" onClick={handleSubmit} disabled={loading}>
+      {loading ? (
+        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+      ) : (
+        <Send className="mr-1 h-3 w-3" />
+      )}
+      Submit
+    </Button>
+  );
+}
