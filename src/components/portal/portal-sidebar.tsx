@@ -20,7 +20,7 @@ const navItems = [
   { label: "Tableau de bord", href: "/portal/dashboard", icon: LayoutDashboard },
   { label: "Strategie", href: "/portal/strategy", icon: Target },
   { label: "Livrables", href: "/portal/deliverables", icon: Package },
-  { label: "Chronologie", href: "/portal/timeline", icon: Clock },
+  { label: "Activite", href: "/portal/timeline", icon: Clock },
   { label: "Parametres", href: "/portal/settings", icon: Settings },
 ];
 

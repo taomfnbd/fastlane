@@ -3,9 +3,11 @@ import { requireClient } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { EMPTY_STATES } from "@/lib/portal-constants";
 import { Clock, Calendar } from "lucide-react";
+import Link from "next/link";
 
-export const metadata = { title: "Chronologie" };
+export const metadata = { title: "Activite" };
 
 export default async function PortalTimelinePage() {
   const session = await requireClient();
@@ -28,15 +30,21 @@ export default async function PortalTimelinePage() {
     take: 20,
   });
 
+  function getActivityLink(activity: { strategyId: string | null; deliverableId: string | null }) {
+    if (activity.strategyId) return `/portal/strategy/${activity.strategyId}`;
+    if (activity.deliverableId) return `/portal/deliverables/${activity.deliverableId}`;
+    return null;
+  }
+
   return (
     <div className="space-y-6">
-      <PageHeader title="Chronologie" />
+      <PageHeader title="Activite" />
 
       {eventCompanies.length === 0 ? (
         <EmptyState
           icon={Clock}
-          title="Aucun evenement"
-          description="Vous ne participez a aucun evenement pour le moment."
+          title={EMPTY_STATES.timeline.title}
+          description={EMPTY_STATES.timeline.description}
         />
       ) : (
         <>
@@ -63,37 +71,58 @@ export default async function PortalTimelinePage() {
 
           {/* Activity feed */}
           <div>
-            <h2 className="text-sm font-medium mb-3">Activite</h2>
+            <h2 className="text-sm font-medium mb-3">Activite recente</h2>
             {activities.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-8 text-center">Aucune activite.</p>
+              <EmptyState
+                icon={Clock}
+                title={EMPTY_STATES.timeline.title}
+                description={EMPTY_STATES.timeline.description}
+              />
             ) : (
               <div className="relative">
-                {activities.map((activity, i) => (
-                  <div key={activity.id} className="flex gap-3 pb-4 last:pb-0">
-                    <div className="flex flex-col items-center">
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
-                        {activity.user.name.charAt(0)}
+                {activities.map((activity, i) => {
+                  const link = getActivityLink(activity);
+                  const content = (
+                    <>
+                      <div className="flex flex-col items-center">
+                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
+                          {activity.user.name.charAt(0)}
+                        </div>
+                        {i < activities.length - 1 && (
+                          <div className="w-px flex-1 bg-border mt-1" />
+                        )}
                       </div>
-                      {i < activities.length - 1 && (
-                        <div className="w-px flex-1 bg-border mt-1" />
-                      )}
+                      <div className="min-w-0 pt-0.5">
+                        <p className="text-xs">
+                          <span className="font-medium">{activity.user.name}</span>{" "}
+                          <span className="text-muted-foreground">{activity.message}</span>
+                        </p>
+                        <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                          {new Date(activity.createdAt).toLocaleDateString("fr-FR", {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                    </>
+                  );
+
+                  return link ? (
+                    <Link
+                      key={activity.id}
+                      href={link}
+                      className="flex gap-3 pb-4 last:pb-0 rounded-md -mx-1 px-1 hover:bg-accent/50 transition-colors"
+                    >
+                      {content}
+                    </Link>
+                  ) : (
+                    <div key={activity.id} className="flex gap-3 pb-4 last:pb-0">
+                      {content}
                     </div>
-                    <div className="min-w-0 pt-0.5">
-                      <p className="text-xs">
-                        <span className="font-medium">{activity.user.name}</span>{" "}
-                        <span className="text-muted-foreground">{activity.message}</span>
-                      </p>
-                      <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                        {new Date(activity.createdAt).toLocaleDateString("fr-FR", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

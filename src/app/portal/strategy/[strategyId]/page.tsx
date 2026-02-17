@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CommentSection } from "@/components/shared/comment-section";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle2, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { StrategyItemReview } from "@/components/portal/strategy-item-review";
 
@@ -38,6 +38,7 @@ export default async function StrategyDetailPage({
       items: {
         orderBy: { order: "asc" },
         include: {
+          _count: { select: { comments: true } },
           comments: {
             include: {
               author: { select: { name: true, image: true } },
@@ -72,6 +73,9 @@ export default async function StrategyDetailPage({
   const totalItems = strategy.items.length;
   const pct = totalItems > 0 ? Math.round((approvedItems / totalItems) * 100) : 0;
 
+  const showAmberBanner = strategy.status === "PENDING_REVIEW" || strategy.status === "REVISED";
+  const showGreenBanner = strategy.status === "APPROVED";
+
   return (
     <div className="space-y-6">
       <div>
@@ -86,6 +90,24 @@ export default async function StrategyDetailPage({
           description={strategy.description ?? undefined}
         />
       </div>
+
+      {/* Contextual banner */}
+      {showAmberBanner && (
+        <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/30 px-4 py-3">
+          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+          <p className="text-sm text-amber-800 dark:text-amber-300">
+            <span className="font-medium">Votre avis est attendu</span> — revisez chaque element et approuvez ou rejetez.
+          </p>
+        </div>
+      )}
+      {showGreenBanner && (
+        <div className="flex items-center gap-3 rounded-md border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/30 px-4 py-3">
+          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+          <p className="text-sm text-emerald-800 dark:text-emerald-300">
+            <span className="font-medium">Strategie approuvee</span> — aucune action requise.
+          </p>
+        </div>
+      )}
 
       {/* Meta */}
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
@@ -124,7 +146,15 @@ export default async function StrategyDetailPage({
                       <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap pl-5">{item.description}</p>
                     )}
                   </div>
-                  <StatusBadge status={item.status} className="shrink-0 ml-3" />
+                  <div className="flex items-center gap-2 shrink-0 ml-3">
+                    {item._count.comments > 0 && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <MessageSquare className="h-3 w-3" />
+                        {item._count.comments}
+                      </span>
+                    )}
+                    <StatusBadge status={item.status} />
+                  </div>
                 </div>
 
                 {/* Review actions */}

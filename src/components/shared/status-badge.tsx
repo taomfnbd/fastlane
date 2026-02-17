@@ -1,4 +1,13 @@
+"use client";
+
 import { cn } from "@/lib/utils";
+import { STATUS_DESCRIPTIONS } from "@/lib/portal-constants";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type StatusColor = "gray" | "amber" | "green" | "red" | "blue" | "purple" | "sky";
 
@@ -64,11 +73,25 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, className }: StatusBadgeProps) {
   const color = statusColorMap[status] ?? "gray";
   const label = statusLabelMap[status] ?? status.replace(/_/g, " ").toLowerCase();
+  const description = STATUS_DESCRIPTIONS[status];
 
-  return (
+  const badge = (
     <span className={cn("inline-flex items-center gap-1.5 text-xs text-muted-foreground", className)}>
       <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", dotColors[color])} />
       {label}
     </span>
+  );
+
+  if (!description) return badge;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{badge}</TooltipTrigger>
+        <TooltipContent side="top" className="max-w-60">
+          {description}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

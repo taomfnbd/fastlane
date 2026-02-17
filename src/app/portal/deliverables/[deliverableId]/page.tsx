@@ -5,9 +5,10 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CommentSection } from "@/components/shared/comment-section";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, AlertTriangle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { DeliverableReviewActions } from "@/components/portal/deliverable-review-actions";
+import { getDeliverableTypeLabel } from "@/lib/portal-constants";
 
 export async function generateMetadata({ params }: { params: Promise<{ deliverableId: string }> }) {
   const { deliverableId } = await params;
@@ -54,6 +55,9 @@ export default async function DeliverableDetailPage({
 
   const content = deliverable.content as Record<string, unknown> | null;
 
+  const showAmberBanner = deliverable.status === "IN_REVIEW" || deliverable.status === "REVISED";
+  const showGreenBanner = deliverable.status === "APPROVED" || deliverable.status === "DELIVERED";
+
   return (
     <div className="space-y-6">
       <div>
@@ -69,10 +73,34 @@ export default async function DeliverableDetailPage({
         />
       </div>
 
+      {/* Contextual banner */}
+      {showAmberBanner && (
+        <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/30 px-4 py-3">
+          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+          <p className="text-sm text-amber-800 dark:text-amber-300">
+            <span className="font-medium">Votre validation est attendue</span> — revisez le contenu et approuvez ou demandez des modifications.
+          </p>
+        </div>
+      )}
+      {showGreenBanner && (
+        <div className="flex items-center gap-3 rounded-md border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/30 px-4 py-3">
+          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+          <p className="text-sm text-emerald-800 dark:text-emerald-300">
+            <span className="font-medium">
+              {deliverable.status === "DELIVERED" ? "Livrable livre" : "Livrable approuve"}
+            </span>
+            {" — "}
+            {deliverable.status === "DELIVERED"
+              ? "le livrable est finalise et disponible."
+              : "aucune action requise."}
+          </p>
+        </div>
+      )}
+
       {/* Meta */}
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <StatusBadge status={deliverable.status} />
-        <span>{deliverable.type.replace(/_/g, " ").toLowerCase()}</span>
+        <span>{getDeliverableTypeLabel(deliverable.type)}</span>
         <span>{deliverable.eventCompany.event.name}</span>
         <span>v{deliverable.version}</span>
       </div>
@@ -123,7 +151,7 @@ export default async function DeliverableDetailPage({
       )}
 
       {/* Review actions */}
-      {deliverable.status === "IN_REVIEW" && (
+      {(deliverable.status === "IN_REVIEW" || deliverable.status === "REVISED") && (
         <div className="rounded-md border p-3">
           <p className="text-xs text-muted-foreground mb-3">
             Revisez ce livrable et approuvez ou demandez des modifications.

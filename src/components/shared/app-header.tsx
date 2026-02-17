@@ -21,7 +21,7 @@ const labelMap: Record<string, string> = {
   users: "Utilisateurs",
   settings: "Parametres",
   strategy: "Strategie",
-  timeline: "Chronologie",
+  timeline: "Activite",
 };
 
 export function AppHeader({ user, notificationCount = 0, onMobileMenuToggle }: AppHeaderProps) {
