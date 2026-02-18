@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { EMPTY_STATES } from "@/lib/portal-constants";
 import { Target, MessageSquare } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Strategie" };
 
@@ -29,9 +30,18 @@ export default async function PortalStrategyPage() {
   const needsReview = (status: string) =>
     status === "PENDING_REVIEW" || status === "REVISED";
 
+  // Sort: pending first, then approved
+  const sortedStrategies = [...strategies].sort((a, b) => {
+    const priority: Record<string, number> = { PENDING_REVIEW: 0, REVISED: 0, CHANGES_REQUESTED: 1, APPROVED: 2 };
+    return (priority[a.status] ?? 1) - (priority[b.status] ?? 1);
+  });
+
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Strategie</h1>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-lg font-semibold">Strategie</h1>
+        <p className="text-sm text-muted-foreground">Consultez et validez les strategies proposees par l&apos;equipe</p>
+      </div>
 
       {strategies.length === 0 ? (
         <EmptyState
@@ -40,41 +50,47 @@ export default async function PortalStrategyPage() {
           description={EMPTY_STATES.strategies.description}
         />
       ) : (
-        <div className="rounded-md border divide-y">
-          {strategies.map((strategy) => {
+        <div className="space-y-2">
+          {sortedStrategies.map((strategy) => {
             const approvedItems = strategy.items.filter((i) => i.status === "APPROVED").length;
             const totalItems = strategy.items.length;
             const pct = totalItems > 0 ? Math.round((approvedItems / totalItems) * 100) : 0;
-            const showReviewBadge = needsReview(strategy.status);
+            const isPending = needsReview(strategy.status);
+            const isApproved = strategy.status === "APPROVED";
 
             return (
               <Link
                 key={strategy.id}
                 href={`/portal/strategy/${strategy.id}`}
-                className="block px-3 py-3 hover:bg-accent/50 transition-colors"
+                className={cn(
+                  "block rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-accent",
+                  isPending && "ring-1 ring-amber-500/20",
+                  isApproved && "opacity-60",
+                )}
               >
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1 flex items-center gap-2">
                     <p className="text-sm font-medium truncate">{strategy.title}</p>
-                    {showReviewBadge && (
-                      <span className="shrink-0 inline-flex items-center rounded-full bg-red-100 dark:bg-red-950 px-2 py-0.5 text-[11px] font-medium text-red-700 dark:text-red-400">
-                        A reviser
+                    {isPending && (
+                      <span className="shrink-0 inline-flex items-center gap-1.5 text-xs text-amber-500">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        A valider
                       </span>
                     )}
                   </div>
                   <StatusBadge status={strategy.status} className="shrink-0 ml-3" />
                 </div>
                 {strategy.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{strategy.description}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{strategy.description}</p>
                 )}
                 <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
                   <span>{strategy.eventCompany.event.name}</span>
                   <span>v{strategy.version}</span>
                   {totalItems > 0 && (
                     <>
-                      <span>{approvedItems}/{totalItems} elements</span>
+                      <span>{approvedItems}/{totalItems}</span>
                       <div className="flex-1 max-w-24">
-                        <div className="h-1 w-full rounded-full bg-muted">
+                        <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
                           <div
                             className="h-1 rounded-full bg-emerald-500 transition-all"
                             style={{ width: `${pct}%` }}

@@ -4,7 +4,6 @@ import { requireClient } from "@/lib/auth-server";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CommentSection } from "@/components/shared/comment-section";
 import { StrategyItemCard } from "@/components/portal/strategy-item-card";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft, AlertTriangle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
@@ -79,12 +78,10 @@ export default async function StrategyDetailPage({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 h-7 text-xs text-muted-foreground">
-          <Link href="/portal/strategy">
-            <ArrowLeft className="mr-1 h-3 w-3" />
-            Strategie
-          </Link>
-        </Button>
+        <Link href="/portal/strategy" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Strategie
+        </Link>
         <h1 className="text-lg font-semibold">{strategy.title}</h1>
         {strategy.description && (
           <p className="text-sm text-muted-foreground mt-0.5">{strategy.description}</p>

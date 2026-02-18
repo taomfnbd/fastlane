@@ -121,35 +121,36 @@ export default async function PortalDashboardPage() {
   const hasContent = totalStrategies > 0 || totalDeliverables > 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Greeting */}
-      <div>
+      <div className="space-y-1">
         <h1 className="text-lg font-semibold">Bonjour {firstName}</h1>
         {actionItems.length > 0 ? (
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {actionItems.length} element{actionItems.length > 1 ? "s" : ""} necessite{actionItems.length > 1 ? "nt" : ""} votre attention
+          <p className="text-sm text-muted-foreground">
+            {actionItems.length} element{actionItems.length > 1 ? "s" : ""} en attente de votre validation
           </p>
         ) : hasContent ? (
-          <p className="text-sm text-muted-foreground mt-0.5">Tout est a jour.</p>
+          <p className="text-sm text-muted-foreground">Vous etes a jour — rien a valider pour le moment</p>
         ) : (
-          <p className="text-sm text-muted-foreground mt-0.5">
-            L&apos;equipe Fastlane prepare votre strategie. Vous serez notifie des qu&apos;elle sera prete pour review.
+          <p className="text-sm text-muted-foreground">
+            L&apos;equipe Fastlane prepare votre strategie. Vous serez notifie des qu&apos;elle sera prete.
           </p>
         )}
       </div>
 
       {/* Action required */}
       {actionItems.length > 0 && (
-        <div>
-          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-            Action requise
-          </h2>
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-sm font-medium">Action requise</span>
+          </div>
           <div className="space-y-2">
             {actionItems.map((item) => (
               <Link
                 key={item.id}
                 href={item.href}
-                className="flex items-center justify-between rounded-md border border-l-4 border-l-amber-500 px-4 py-3 hover:bg-accent/50 transition-colors group"
+                className="flex items-center justify-between rounded-md border bg-card p-3 transition-colors hover:bg-accent group"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -160,14 +161,11 @@ export default async function PortalDashboardPage() {
                     )}
                     <p className="text-sm font-medium truncate">{item.title}</p>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 ml-5.5">
-                    {item.typeLabel} · Soumis {relativeTime(item.since)}
+                  <p className="text-xs text-muted-foreground mt-0.5 ml-[22px]">
+                    {item.typeLabel} · {relativeTime(item.since)}
                   </p>
                 </div>
-                <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors shrink-0 ml-3 flex items-center gap-1">
-                  Voir et valider
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </span>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0 ml-3" />
               </Link>
             ))}
           </div>
@@ -176,73 +174,64 @@ export default async function PortalDashboardPage() {
 
       {/* Progression */}
       {hasContent && (
-        <div>
-          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-            Progression
-          </h2>
-          <div className="space-y-3">
-            {totalStrategies > 0 && (
-              <div className="flex items-center gap-3">
-                <span className="text-sm w-24 shrink-0">Strategie</span>
-                <div className="flex-1 h-2 rounded-full bg-muted">
-                  <div
-                    className="h-2 rounded-full bg-primary transition-all"
-                    style={{
-                      width: `${Math.round((approvedStrategies / totalStrategies) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <span className="text-sm text-muted-foreground tabular-nums w-20 text-right shrink-0">
-                  {approvedStrategies}/{totalStrategies} valide{approvedStrategies > 1 ? "s" : ""}
-                </span>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {totalStrategies > 0 && (
+            <div className="rounded-lg border bg-card p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Strategie</span>
+                <span className="text-xs text-muted-foreground">{approvedStrategies}/{totalStrategies}</span>
               </div>
-            )}
-            {totalDeliverables > 0 && (
-              <div className="flex items-center gap-3">
-                <span className="text-sm w-24 shrink-0">Livrables</span>
-                <div className="flex-1 h-2 rounded-full bg-muted">
-                  <div
-                    className="h-2 rounded-full bg-primary transition-all"
-                    style={{
-                      width: `${Math.round((approvedDeliverables / totalDeliverables) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <span className="text-sm text-muted-foreground tabular-nums w-20 text-right shrink-0">
-                  {approvedDeliverables}/{totalDeliverables} valide{approvedDeliverables > 1 ? "s" : ""}
-                </span>
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  style={{
+                    width: `${Math.round((approvedStrategies / totalStrategies) * 100)}%`,
+                  }}
+                />
               </div>
-            )}
-          </div>
+            </div>
+          )}
+          {totalDeliverables > 0 && (
+            <div className="rounded-lg border bg-card p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Livrables</span>
+                <span className="text-xs text-muted-foreground">{approvedDeliverables}/{totalDeliverables}</span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  style={{
+                    width: `${Math.round((approvedDeliverables / totalDeliverables) * 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Recent activity */}
       {activities.length > 0 && (
-        <div>
-          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-            Activite recente
-          </h2>
+        <div className="space-y-1">
+          <h2 className="text-sm font-medium">Activite recente</h2>
           <div className="space-y-0">
             {activities.map((activity) => {
               const isTeam = activity.user.role === "SUPER_ADMIN" || activity.user.role === "ADMIN";
               return (
-                <div key={activity.id} className="flex items-start gap-3 py-2">
+                <div key={activity.id} className="flex items-start gap-3 py-2.5 border-b last:border-0">
                   <div
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-medium mt-0.5 ${
-                      isTeam ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                    }`}
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground mt-0.5"
                   >
                     {isTeam ? "F" : activity.user.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs">
+                    <p className="text-sm truncate">
                       <span className="font-medium">
                         {isTeam ? "L'equipe Fastlane" : "Vous"}
                       </span>{" "}
                       <span className="text-muted-foreground">{activity.message}</span>
                     </p>
-                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                    <p className="text-xs text-muted-foreground/60 mt-0.5">
                       {relativeTime(activity.createdAt)}
                     </p>
                   </div>

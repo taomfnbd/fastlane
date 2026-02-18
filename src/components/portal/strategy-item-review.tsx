@@ -30,9 +30,9 @@ export function StrategyItemReview({ itemId, strategyId }: StrategyItemReviewPro
     setLoading(true);
     const result = await updateStrategyItemStatus({ id: itemId, status: "APPROVED" });
     if (result.success) {
-      toast.success("Element approuve");
+      toast.success("Approuve", { description: "L'equipe Fastlane a ete notifiee" });
     } else {
-      toast.error(result.error);
+      toast.error("Erreur", { description: result.error });
     }
     setLoading(false);
   }
@@ -52,11 +52,11 @@ export function StrategyItemReview({ itemId, strategyId }: StrategyItemReviewPro
     // Then change the status
     const result = await updateStrategyItemStatus({ id: itemId, status: "REJECTED" });
     if (result.success) {
-      toast.success("Modifications demandees");
+      toast("Modifications demandees", { description: "Votre commentaire a ete envoye a l'equipe" });
       setRejectOpen(false);
       setRejectComment("");
     } else {
-      toast.error(result.error);
+      toast.error("Erreur", { description: result.error });
     }
     setLoading(false);
   }

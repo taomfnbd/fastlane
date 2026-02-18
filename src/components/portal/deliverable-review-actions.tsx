@@ -28,9 +28,9 @@ export function DeliverableReviewActions({ deliverableId }: DeliverableReviewAct
     setLoading(true);
     const result = await approveDeliverable(deliverableId);
     if (result.success) {
-      toast.success("Livrable approuve");
+      toast.success("Approuve", { description: "L'equipe Fastlane a ete notifiee" });
     } else {
-      toast.error(result.error);
+      toast.error("Erreur", { description: result.error });
     }
     setLoading(false);
   }
@@ -48,11 +48,11 @@ export function DeliverableReviewActions({ deliverableId }: DeliverableReviewAct
     // Then change status
     const result = await requestDeliverableChanges(deliverableId);
     if (result.success) {
-      toast("Commentaire envoye — l'equipe Fastlane sera notifiee");
+      toast("Modifications demandees", { description: "Votre commentaire a ete envoye a l'equipe" });
       setDialogOpen(false);
       setComment("");
     } else {
-      toast.error(result.error);
+      toast.error("Erreur", { description: result.error });
     }
     setLoading(false);
   }

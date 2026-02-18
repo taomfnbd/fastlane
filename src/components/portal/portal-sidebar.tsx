@@ -71,7 +71,7 @@ export function PortalSidebar({
           <>
             <span className="flex-1">{item.label}</span>
             {item.badge ? (
-              <span className="text-xs font-medium tabular-nums text-muted-foreground">
+              <span className="text-xs font-medium tabular-nums text-amber-500">
                 {item.badge}
               </span>
             ) : null}
