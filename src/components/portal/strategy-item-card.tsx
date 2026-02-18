@@ -104,7 +104,7 @@ export function StrategyItemCard({
             {/* Review actions */}
             {needsAction && (
               <div className="pt-2 border-t">
-                <StrategyItemReview itemId={item.id} />
+                <StrategyItemReview itemId={item.id} strategyId={strategyId} />
               </div>
             )}
           </div>

@@ -5,6 +5,7 @@ import { requireAdmin, getSession, getUserWithRole, isAdmin } from "@/lib/auth-s
 import { createDeliverableSchema } from "@/types";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/types";
+import { notifyAdmins, notifyClientUsers } from "@/lib/notify";
 
 export async function createDeliverable(formData: FormData): Promise<ActionResult<{ id: string }>> {
   const session = await requireAdmin();
@@ -48,17 +49,7 @@ export async function submitDeliverableForReview(deliverableId: string): Promise
   const deliverable = await prisma.deliverable.update({
     where: { id: deliverableId },
     data: { status: "IN_REVIEW" },
-    include: {
-      eventCompany: {
-        include: {
-          company: {
-            include: {
-              users: { where: { role: { in: ["CLIENT_ADMIN", "CLIENT_MEMBER"] } } },
-            },
-          },
-        },
-      },
-    },
+    select: { id: true, title: true, eventCompanyId: true },
   });
 
   await prisma.activity.create({
@@ -70,17 +61,12 @@ export async function submitDeliverableForReview(deliverableId: string): Promise
     },
   });
 
-  const clientUsers = deliverable.eventCompany.company.users;
-  if (clientUsers.length > 0) {
-    await prisma.notification.createMany({
-      data: clientUsers.map((u) => ({
-        title: "Deliverable submitted",
-        message: `"${deliverable.title}" is ready for your review.`,
-        link: `/portal/deliverables/${deliverable.id}`,
-        userId: u.id,
-      })),
-    });
-  }
+  await notifyClientUsers(
+    deliverable.eventCompanyId,
+    "Livrable soumis",
+    `"${deliverable.title}" est pret pour votre validation.`,
+    `/portal/deliverables/${deliverable.id}`,
+  );
 
   revalidatePath("/admin/events");
   revalidatePath("/portal/deliverables");
@@ -94,7 +80,7 @@ export async function approveDeliverable(deliverableId: string): Promise<ActionR
 
   const deliverable = await prisma.deliverable.findUnique({
     where: { id: deliverableId },
-    include: { eventCompany: { select: { companyId: true } } },
+    include: { eventCompany: { select: { companyId: true, id: true } } },
   });
 
   if (!deliverable) return { success: false, error: "Not found" };
@@ -120,6 +106,16 @@ export async function approveDeliverable(deliverableId: string): Promise<ActionR
     },
   });
 
+  // Notify admins when client approves
+  if (!isAdmin(user.role)) {
+    await notifyAdmins(
+      deliverable.eventCompany.id,
+      "Livrable approuve",
+      `Le client a approuve "${deliverable.title}".`,
+      `/admin/events`,
+    );
+  }
+
   revalidatePath("/admin/events");
   revalidatePath("/portal/deliverables");
   revalidatePath(`/portal/deliverables/${deliverableId}`);
@@ -132,7 +128,7 @@ export async function requestDeliverableChanges(deliverableId: string): Promise<
 
   const deliverable = await prisma.deliverable.findUnique({
     where: { id: deliverableId },
-    include: { eventCompany: { select: { companyId: true } } },
+    include: { eventCompany: { select: { companyId: true, id: true } } },
   });
 
   if (!deliverable) return { success: false, error: "Not found" };
@@ -157,6 +153,16 @@ export async function requestDeliverableChanges(deliverableId: string): Promise<
       deliverableId: deliverable.id,
     },
   });
+
+  // Notify admins when client requests changes
+  if (!isAdmin(user.role)) {
+    await notifyAdmins(
+      deliverable.eventCompany.id,
+      "Modifications demandees",
+      `Le client demande des modifications sur "${deliverable.title}".`,
+      `/admin/events`,
+    );
+  }
 
   revalidatePath("/admin/events");
   revalidatePath("/portal/deliverables");

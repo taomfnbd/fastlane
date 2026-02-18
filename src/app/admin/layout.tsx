@@ -14,9 +14,26 @@ export default async function AdminLayout({
     select: { name: true, email: true },
   });
 
-  const notificationCount = await prisma.notification.count({
-    where: { userId: session.user.id, read: false },
+  const notifications = await prisma.notification.findMany({
+    where: { userId: session.user.id },
+    take: 10,
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      message: true,
+      link: true,
+      read: true,
+      createdAt: true,
+    },
   });
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const serializedNotifications = notifications.map((n) => ({
+    ...n,
+    createdAt: n.createdAt.toISOString(),
+  }));
 
   return (
     <AdminShell
@@ -24,7 +41,8 @@ export default async function AdminLayout({
         name: user?.name ?? session.user.name,
         email: user?.email ?? session.user.email,
       }}
-      notificationCount={notificationCount}
+      notifications={serializedNotifications}
+      unreadCount={unreadCount}
     >
       {children}
     </AdminShell>

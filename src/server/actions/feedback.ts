@@ -5,6 +5,7 @@ import { getSession, getUserWithRole, isAdmin } from "@/lib/auth-server";
 import { createCommentSchema } from "@/types";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/types";
+import { notifyCommentParties } from "@/lib/notify";
 
 export async function addComment(formData: FormData): Promise<ActionResult<{ id: string }>> {
   const session = await getSession();
@@ -80,6 +81,25 @@ export async function addComment(formData: FormData): Promise<ActionResult<{ id:
       deliverableId: deliverableId ?? null,
     },
   });
+
+  // Notify the other party (admin ↔ client)
+  if (strategyId) {
+    await notifyCommentParties(
+      session.user.id,
+      "strategy",
+      strategyId,
+      `Nouveau commentaire sur "${targetName}"`,
+      `/portal/strategy/${strategyId}`,
+    );
+  } else if (deliverableId) {
+    await notifyCommentParties(
+      session.user.id,
+      "deliverable",
+      deliverableId,
+      `Nouveau commentaire sur "${targetName}"`,
+      `/portal/deliverables/${deliverableId}`,
+    );
+  }
 
   revalidatePath("/admin/events");
   revalidatePath("/portal/strategy");

@@ -5,6 +5,7 @@ import { requireAdmin, requireClient, getSession, getUserWithRole, isAdmin } fro
 import { createStrategySchema, createStrategyItemSchema, updateStrategyItemStatusSchema } from "@/types";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/types";
+import { notifyAdmins, notifyClientUsers } from "@/lib/notify";
 
 export async function createStrategy(formData: FormData): Promise<ActionResult<{ id: string }>> {
   const session = await requireAdmin();
@@ -80,17 +81,7 @@ export async function submitStrategyForReview(strategyId: string): Promise<Actio
   const strategy = await prisma.strategy.update({
     where: { id: strategyId },
     data: { status: "PENDING_REVIEW" },
-    include: {
-      eventCompany: {
-        include: {
-          company: {
-            include: {
-              users: { where: { role: { in: ["CLIENT_ADMIN", "CLIENT_MEMBER"] } } },
-            },
-          },
-        },
-      },
-    },
+    select: { id: true, title: true, eventCompanyId: true },
   });
 
   // Create activity
@@ -104,17 +95,12 @@ export async function submitStrategyForReview(strategyId: string): Promise<Actio
   });
 
   // Notify client users
-  const clientUsers = strategy.eventCompany.company.users;
-  if (clientUsers.length > 0) {
-    await prisma.notification.createMany({
-      data: clientUsers.map((u) => ({
-        title: "Strategy submitted for review",
-        message: `"${strategy.title}" is ready for your review.`,
-        link: `/portal/strategy/${strategy.id}`,
-        userId: u.id,
-      })),
-    });
-  }
+  await notifyClientUsers(
+    strategy.eventCompanyId,
+    "Strategie soumise",
+    `"${strategy.title}" est prete pour votre validation.`,
+    `/portal/strategy/${strategy.id}`,
+  );
 
   revalidatePath("/admin/events");
   revalidatePath("/portal/strategy");
@@ -138,7 +124,7 @@ export async function updateStrategyItemStatus(
     include: {
       strategy: {
         include: {
-          eventCompany: { select: { companyId: true } },
+          eventCompany: { select: { companyId: true, id: true } },
         },
       },
     },
@@ -158,6 +144,25 @@ export async function updateStrategyItemStatus(
     where: { id: parsed.data.id },
     data: { status: parsed.data.status },
   });
+
+  // Notify admins when client approves/rejects an item
+  if (!isAdmin(user.role)) {
+    if (parsed.data.status === "APPROVED") {
+      await notifyAdmins(
+        item.strategy.eventCompany.id,
+        "Element approuve",
+        `"${item.title}" a ete approuve par le client.`,
+        `/admin/events`,
+      );
+    } else if (parsed.data.status === "REJECTED") {
+      await notifyAdmins(
+        item.strategy.eventCompany.id,
+        "Element refuse",
+        `"${item.title}" a ete refuse par le client.`,
+        `/admin/events`,
+      );
+    }
+  }
 
   // Check if all items are approved
   const allItems = await prisma.strategyItem.findMany({

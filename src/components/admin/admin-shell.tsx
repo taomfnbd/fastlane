@@ -2,17 +2,28 @@
 
 import { useState } from "react";
 import { AdminSidebar } from "./admin-sidebar";
+import { AdminNotificationBell } from "./notification-bell";
 import { AppHeader } from "@/components/shared/app-header";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  link: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
 interface AdminShellProps {
   user: { name: string; email: string };
-  notificationCount: number;
+  notifications: Notification[];
+  unreadCount: number;
   children: React.ReactNode;
 }
 
-export function AdminShell({ user, notificationCount, children }: AdminShellProps) {
+export function AdminShell({ user, notifications, unreadCount, children }: AdminShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -47,8 +58,13 @@ export function AdminShell({ user, notificationCount, children }: AdminShellProp
       >
         <AppHeader
           user={user}
-          notificationCount={notificationCount}
           onMobileMenuToggle={() => setMobileOpen(true)}
+          notificationSlot={
+            <AdminNotificationBell
+              notifications={notifications}
+              unreadCount={unreadCount}
+            />
+          }
         />
         <main className="px-4 py-4 lg:px-6">{children}</main>
       </div>

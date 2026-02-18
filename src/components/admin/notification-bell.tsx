@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/popover";
 import { relativeTime } from "@/lib/utils";
 import { markAsRead, markAllAsRead } from "@/server/actions/notifications";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 interface Notification {
@@ -22,12 +21,12 @@ interface Notification {
   createdAt: string;
 }
 
-interface NotificationBellProps {
+interface AdminNotificationBellProps {
   notifications: Notification[];
   unreadCount: number;
 }
 
-export function NotificationBell({ notifications, unreadCount }: NotificationBellProps) {
+export function AdminNotificationBell({ notifications, unreadCount }: AdminNotificationBellProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -110,44 +109,27 @@ export function NotificationBell({ notifications, unreadCount }: NotificationBel
           </p>
         ) : (
           <div className="max-h-80 overflow-y-auto">
-            {optimisticNotifs.map((n) => {
-              const inner = (
-                <>
-                  <div
-                    className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
-                      n.read ? "bg-muted-foreground/20" : "bg-blue-500"
-                    }`}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium">{n.title}</p>
-                    <p className="text-[11px] text-muted-foreground line-clamp-2">{n.message}</p>
-                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                      {relativeTime(n.createdAt)}
-                    </p>
-                  </div>
-                </>
-              );
-
-              return n.link ? (
-                <button
-                  key={n.id}
-                  type="button"
-                  className="flex w-full items-start gap-2.5 px-3 py-2.5 hover:bg-accent/50 transition-colors text-left"
-                  onClick={() => handleNotificationClick(n)}
-                >
-                  {inner}
-                </button>
-              ) : (
-                <button
-                  key={n.id}
-                  type="button"
-                  className="flex w-full items-start gap-2.5 px-3 py-2.5 hover:bg-accent/50 transition-colors text-left"
-                  onClick={() => handleNotificationClick(n)}
-                >
-                  {inner}
-                </button>
-              );
-            })}
+            {optimisticNotifs.map((n) => (
+              <button
+                key={n.id}
+                type="button"
+                className="flex w-full items-start gap-2.5 px-3 py-2.5 hover:bg-accent/50 transition-colors text-left"
+                onClick={() => handleNotificationClick(n)}
+              >
+                <div
+                  className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
+                    n.read ? "bg-muted-foreground/20" : "bg-blue-500"
+                  }`}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium">{n.title}</p>
+                  <p className="text-[11px] text-muted-foreground line-clamp-2">{n.message}</p>
+                  <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                    {relativeTime(n.createdAt)}
+                  </p>
+                </div>
+              </button>
+            ))}
           </div>
         )}
       </PopoverContent>
