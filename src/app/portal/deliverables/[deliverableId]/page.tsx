@@ -58,14 +58,14 @@ export default async function DeliverableDetailPage({
   const isDone = deliverable.status === "APPROVED" || deliverable.status === "DELIVERED";
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="max-w-2xl mx-auto space-y-6 pb-20">
       {/* Header */}
       <div>
         <Link href="/portal/deliverables" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="h-3.5 w-3.5" />
           Livrables
         </Link>
-        <h1 className="text-lg font-semibold">{deliverable.title}</h1>
+        <h1 className="text-lg font-semibold tracking-tight">{deliverable.title}</h1>
         {deliverable.description && (
           <p className="text-sm text-muted-foreground mt-0.5">{deliverable.description}</p>
         )}
@@ -173,8 +173,8 @@ export default async function DeliverableDetailPage({
 
       {/* Sticky action bar */}
       {needsAction && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 p-4">
-          <div className="max-w-3xl mx-auto">
+        <div className="sticky bottom-0 z-40 -mx-4 border-t bg-background/95 backdrop-blur-sm p-4 lg:-mx-6">
+          <div className="max-w-2xl mx-auto">
             <DeliverableReviewActions deliverableId={deliverable.id} />
           </div>
         </div>

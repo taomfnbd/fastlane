@@ -6,7 +6,7 @@ import {
   Target,
   Package,
   CheckCircle2,
-  ArrowRight,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -121,10 +121,10 @@ export default async function PortalDashboardPage() {
   const hasContent = totalStrategies > 0 || totalDeliverables > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       {/* Greeting */}
       <div className="space-y-1">
-        <h1 className="text-lg font-semibold">Bonjour {firstName}</h1>
+        <h1 className="text-lg font-semibold tracking-tight">Bonjour {firstName}</h1>
         {actionItems.length > 0 ? (
           <p className="text-sm text-muted-foreground">
             {actionItems.length} element{actionItems.length > 1 ? "s" : ""} en attente de votre validation
@@ -142,7 +142,10 @@ export default async function PortalDashboardPage() {
       {actionItems.length > 0 && (
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+            </span>
             <span className="text-sm font-medium">Action requise</span>
           </div>
           <div className="space-y-2">
@@ -159,13 +162,13 @@ export default async function PortalDashboardPage() {
                     ) : (
                       <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     )}
-                    <p className="text-sm font-medium truncate">{item.title}</p>
+                    <p className="text-sm font-medium truncate group-hover:underline">{item.title}</p>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5 ml-[22px]">
                     {item.typeLabel} · {relativeTime(item.since)}
                   </p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0 ml-3" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0 ml-3" />
               </Link>
             ))}
           </div>
@@ -181,9 +184,9 @@ export default async function PortalDashboardPage() {
                 <span className="text-sm font-medium">Strategie</span>
                 <span className="text-xs text-muted-foreground">{approvedStrategies}/{totalStrategies}</span>
               </div>
-              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-700"
                   style={{
                     width: `${Math.round((approvedStrategies / totalStrategies) * 100)}%`,
                   }}
@@ -197,9 +200,9 @@ export default async function PortalDashboardPage() {
                 <span className="text-sm font-medium">Livrables</span>
                 <span className="text-xs text-muted-foreground">{approvedDeliverables}/{totalDeliverables}</span>
               </div>
-              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-700"
                   style={{
                     width: `${Math.round((approvedDeliverables / totalDeliverables) * 100)}%`,
                   }}
@@ -213,12 +216,12 @@ export default async function PortalDashboardPage() {
       {/* Recent activity */}
       {activities.length > 0 && (
         <div className="space-y-1">
-          <h2 className="text-sm font-medium">Activite recente</h2>
-          <div className="space-y-0">
+          <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Activite recente</h2>
+          <div className="divide-y">
             {activities.map((activity) => {
               const isTeam = activity.user.role === "SUPER_ADMIN" || activity.user.role === "ADMIN";
               return (
-                <div key={activity.id} className="flex items-start gap-3 py-2.5 border-b last:border-0">
+                <div key={activity.id} className="flex items-start gap-3 py-2.5">
                   <div
                     className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground mt-0.5"
                   >

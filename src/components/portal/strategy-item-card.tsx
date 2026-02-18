@@ -53,8 +53,9 @@ export function StrategyItemCard({
     <Collapsible defaultOpen={!isApproved}>
       <div
         className={cn(
-          "rounded-md border transition-opacity",
-          isApproved && "opacity-70"
+          "rounded-lg border bg-card transition-opacity",
+          isApproved && "opacity-50",
+          needsAction && "ring-1 ring-amber-500/20",
         )}
       >
         <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-accent/30 transition-colors">

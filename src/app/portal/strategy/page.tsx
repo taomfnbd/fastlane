@@ -3,7 +3,7 @@ import { requireClient } from "@/lib/auth-server";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { EMPTY_STATES } from "@/lib/portal-constants";
-import { Target, MessageSquare } from "lucide-react";
+import { Target, MessageSquare, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -37,9 +37,9 @@ export default async function PortalStrategyPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <div className="space-y-1">
-        <h1 className="text-lg font-semibold">Strategie</h1>
+        <h1 className="text-lg font-semibold tracking-tight">Strategie</h1>
         <p className="text-sm text-muted-foreground">Consultez et validez les strategies proposees par l&apos;equipe</p>
       </div>
 
@@ -63,49 +63,50 @@ export default async function PortalStrategyPage() {
                 key={strategy.id}
                 href={`/portal/strategy/${strategy.id}`}
                 className={cn(
-                  "block rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-accent",
+                  "group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-accent",
                   isPending && "ring-1 ring-amber-500/20",
-                  isApproved && "opacity-60",
+                  isApproved && "opacity-50",
                 )}
               >
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1 flex items-center gap-2">
-                    <p className="text-sm font-medium truncate">{strategy.title}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium truncate group-hover:underline">{strategy.title}</p>
                     {isPending && (
                       <span className="shrink-0 inline-flex items-center gap-1.5 text-xs text-amber-500">
                         <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                         A valider
                       </span>
                     )}
+                    <StatusBadge status={strategy.status} className="shrink-0 ml-auto" />
                   </div>
-                  <StatusBadge status={strategy.status} className="shrink-0 ml-3" />
-                </div>
-                {strategy.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{strategy.description}</p>
-                )}
-                <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
-                  <span>{strategy.eventCompany.event.name}</span>
-                  <span>v{strategy.version}</span>
-                  {totalItems > 0 && (
-                    <>
-                      <span>{approvedItems}/{totalItems}</span>
-                      <div className="flex-1 max-w-24">
-                        <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
-                          <div
-                            className="h-1 rounded-full bg-emerald-500 transition-all"
-                            style={{ width: `${pct}%` }}
-                          />
+                  {strategy.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{strategy.description}</p>
+                  )}
+                  <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
+                    <span>{strategy.eventCompany.event.name}</span>
+                    <span>v{strategy.version}</span>
+                    {totalItems > 0 && (
+                      <>
+                        <span>{approvedItems}/{totalItems}</span>
+                        <div className="flex-1 max-w-24">
+                          <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+                            <div
+                              className="h-1 rounded-full bg-emerald-500 transition-all"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  )}
-                  {strategy._count.comments > 0 && (
-                    <span className="inline-flex items-center gap-1">
-                      <MessageSquare className="h-3 w-3" />
-                      {strategy._count.comments}
-                    </span>
-                  )}
+                      </>
+                    )}
+                    {strategy._count.comments > 0 && (
+                      <span className="inline-flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3" />
+                        {strategy._count.comments}
+                      </span>
+                    )}
+                  </div>
                 </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             );
           })}

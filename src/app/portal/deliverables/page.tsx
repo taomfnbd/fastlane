@@ -11,9 +11,10 @@ import {
   Share2,
   FileText,
   Megaphone,
-  ArrowRight,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Livrables" };
 
@@ -52,8 +53,8 @@ export default async function PortalDeliverablesPage() {
 
   if (deliverables.length === 0) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-lg font-semibold">Livrables</h1>
+      <div className="max-w-2xl mx-auto space-y-4">
+        <h1 className="text-lg font-semibold tracking-tight">Livrables</h1>
         <EmptyState
           icon={Package}
           title={EMPTY_STATES.deliverables.title}
@@ -64,9 +65,9 @@ export default async function PortalDeliverablesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <div className="space-y-1">
-        <h1 className="text-lg font-semibold">Livrables</h1>
+        <h1 className="text-lg font-semibold tracking-tight">Livrables</h1>
         <p className="text-sm text-muted-foreground">Consultez et validez les livrables soumis par l&apos;equipe</p>
       </div>
 
@@ -83,17 +84,17 @@ export default async function PortalDeliverablesPage() {
                 <Link
                   key={d.id}
                   href={`/portal/deliverables/${d.id}`}
-                  className="flex items-center gap-4 rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+                  className="group flex items-center gap-4 rounded-lg border bg-card p-4 transition-colors hover:bg-accent ring-1 ring-amber-500/20"
                 >
                   <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{d.title}</p>
+                    <p className="text-sm font-medium truncate group-hover:underline">{d.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {getDeliverableTypeLabel(d.type)} · v{d.version} · {relativeTime(d.updatedAt)}
                     </p>
                   </div>
                   <StatusBadge status={d.status} className="shrink-0" />
-                  <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               );
             })}
@@ -114,17 +115,17 @@ export default async function PortalDeliverablesPage() {
                 <Link
                   key={d.id}
                   href={`/portal/deliverables/${d.id}`}
-                  className="flex items-center gap-4 rounded-lg border bg-card p-4 transition-colors hover:bg-accent opacity-60"
+                  className="group flex items-center gap-4 rounded-lg border bg-card p-4 transition-colors hover:bg-accent opacity-50"
                 >
                   <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{d.title}</p>
+                    <p className="text-sm font-medium truncate group-hover:underline">{d.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {getDeliverableTypeLabel(d.type)} · v{d.version} · {relativeTime(d.updatedAt)}
                     </p>
                   </div>
                   <StatusBadge status={d.status} className="shrink-0" />
-                  <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               );
             })}

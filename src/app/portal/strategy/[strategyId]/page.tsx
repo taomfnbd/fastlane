@@ -75,14 +75,14 @@ export default async function StrategyDetailPage({
   const showGreenBanner = strategy.status === "APPROVED";
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div>
         <Link href="/portal/strategy" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="h-3.5 w-3.5" />
           Strategie
         </Link>
-        <h1 className="text-lg font-semibold">{strategy.title}</h1>
+        <h1 className="text-lg font-semibold tracking-tight">{strategy.title}</h1>
         {strategy.description && (
           <p className="text-sm text-muted-foreground mt-0.5">{strategy.description}</p>
         )}
@@ -115,9 +115,9 @@ export default async function StrategyDetailPage({
 
       {/* Progress */}
       {totalItems > 0 && (
-        <div className="h-1.5 w-full rounded-full bg-muted">
+        <div className="h-1 w-full rounded-full bg-muted">
           <div
-            className="h-1.5 rounded-full bg-emerald-500 transition-all"
+            className="h-1 rounded-full bg-emerald-500 transition-all duration-700"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -142,7 +142,7 @@ export default async function StrategyDetailPage({
 
       {/* Global comments */}
       <div>
-        <h2 className="text-sm font-medium mb-3">Commentaires</h2>
+        <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-3">Commentaires</h2>
         <div className="rounded-md border p-3">
           <CommentSection
             comments={strategy.comments}
