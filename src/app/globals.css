@@ -126,3 +126,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .shadow-float {
+    box-shadow: 0 -4px 30px -8px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 0.3s ease-out;
+}

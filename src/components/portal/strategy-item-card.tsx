@@ -53,7 +53,7 @@ export function StrategyItemCard({
     <Collapsible defaultOpen={!isApproved}>
       <div
         className={cn(
-          "rounded-lg border bg-card transition-opacity",
+          "rounded-xl border bg-card transition-opacity",
           isApproved && "opacity-50",
           needsAction && "ring-1 ring-amber-500/20",
         )}

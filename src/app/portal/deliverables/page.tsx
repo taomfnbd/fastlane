@@ -53,8 +53,11 @@ export default async function PortalDeliverablesPage() {
 
   if (deliverables.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto space-y-4">
-        <h1 className="text-lg font-semibold tracking-tight">Livrables</h1>
+      <div className="space-y-8 animate-fade-up">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold tracking-tight">Livrables</h1>
+          <p className="text-sm text-muted-foreground">Consultez et validez les livrables soumis par l&apos;equipe</p>
+        </div>
         <EmptyState
           icon={Package}
           title={EMPTY_STATES.deliverables.title}
@@ -65,9 +68,9 @@ export default async function PortalDeliverablesPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="space-y-8 animate-fade-up">
       <div className="space-y-1">
-        <h1 className="text-lg font-semibold tracking-tight">Livrables</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Livrables</h1>
         <p className="text-sm text-muted-foreground">Consultez et validez les livrables soumis par l&apos;equipe</p>
       </div>
 
@@ -80,15 +83,19 @@ export default async function PortalDeliverablesPage() {
           <div className="space-y-2">
             {pending.map((d) => {
               const Icon = typeIcons[d.type] ?? Package;
+              const needsAction = d.status === "IN_REVIEW" || d.status === "REVISED";
               return (
                 <Link
                   key={d.id}
                   href={`/portal/deliverables/${d.id}`}
-                  className="group flex items-center gap-4 rounded-lg border bg-card p-4 transition-colors hover:bg-accent ring-1 ring-amber-500/20"
+                  className={cn(
+                    "group flex items-center gap-4 rounded-xl bg-card px-4 py-3.5 transition-colors hover:bg-accent",
+                    needsAction && "ring-1 ring-amber-500/20 hover:ring-amber-500/40",
+                  )}
                 >
                   <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate group-hover:underline">{d.title}</p>
+                    <p className="text-sm font-medium truncate group-hover:underline decoration-muted-foreground/30 underline-offset-2">{d.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {getDeliverableTypeLabel(d.type)} · v{d.version} · {relativeTime(d.updatedAt)}
                     </p>
@@ -106,7 +113,7 @@ export default async function PortalDeliverablesPage() {
       {done.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Valides ({done.length})
+            Termines ({done.length})
           </h2>
           <div className="space-y-2">
             {done.map((d) => {
@@ -115,11 +122,11 @@ export default async function PortalDeliverablesPage() {
                 <Link
                   key={d.id}
                   href={`/portal/deliverables/${d.id}`}
-                  className="group flex items-center gap-4 rounded-lg border bg-card p-4 transition-colors hover:bg-accent opacity-50"
+                  className="group flex items-center gap-4 rounded-xl bg-card/40 px-4 py-3.5 transition-colors hover:bg-accent opacity-50"
                 >
                   <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate group-hover:underline">{d.title}</p>
+                    <p className="text-sm font-medium truncate group-hover:underline decoration-muted-foreground/30 underline-offset-2">{d.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {getDeliverableTypeLabel(d.type)} · v{d.version} · {relativeTime(d.updatedAt)}
                     </p>

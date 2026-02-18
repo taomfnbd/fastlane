@@ -58,14 +58,14 @@ export default async function DeliverableDetailPage({
   const isDone = deliverable.status === "APPROVED" || deliverable.status === "DELIVERED";
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-20">
+    <div className="space-y-6 animate-fade-up pb-28">
       {/* Header */}
       <div>
         <Link href="/portal/deliverables" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="h-3.5 w-3.5" />
           Livrables
         </Link>
-        <h1 className="text-lg font-semibold tracking-tight">{deliverable.title}</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{deliverable.title}</h1>
         {deliverable.description && (
           <p className="text-sm text-muted-foreground mt-0.5">{deliverable.description}</p>
         )}
@@ -79,7 +79,7 @@ export default async function DeliverableDetailPage({
 
       {/* Contextual banner */}
       {needsAction && (
-        <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/30 px-4 py-3">
+        <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/30 px-4 py-3">
           <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
           <p className="text-sm text-amber-800 dark:text-amber-300">
             <span className="font-medium">Votre validation est attendue</span> — revisez le contenu et approuvez ou demandez des modifications.
@@ -87,7 +87,7 @@ export default async function DeliverableDetailPage({
         </div>
       )}
       {isDone && (
-        <div className="flex items-center gap-3 rounded-md border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/30 px-4 py-3">
+        <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/30 px-4 py-3">
           <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
           <p className="text-sm text-emerald-800 dark:text-emerald-300">
             <span className="font-medium">
@@ -105,7 +105,7 @@ export default async function DeliverableDetailPage({
             Apercu
           </h2>
           {deliverable.type === "EMAIL_TEMPLATE" && content.subject ? (
-            <div className="mx-auto max-w-2xl rounded-md border bg-white dark:bg-muted/30 p-6 space-y-4">
+            <div className="rounded-xl border bg-white dark:bg-muted/30 p-6 space-y-4">
               <div>
                 <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Objet</p>
                 <p className="text-sm font-medium mt-0.5">{String(content.subject)}</p>
@@ -124,7 +124,7 @@ export default async function DeliverableDetailPage({
               )}
             </div>
           ) : deliverable.type === "SCRIPT" ? (
-            <div className="rounded-md border p-4">
+            <div className="rounded-xl border p-4">
               <div className="prose prose-sm max-w-none dark:prose-invert">
                 <pre className="whitespace-pre-wrap font-sans text-sm">
                   {typeof content === "string" ? content : JSON.stringify(content, null, 2)}
@@ -132,7 +132,7 @@ export default async function DeliverableDetailPage({
               </div>
             </div>
           ) : (
-            <div className="rounded-md border p-4">
+            <div className="rounded-xl border p-4">
               <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
                 {JSON.stringify(content, null, 2)}
               </pre>
@@ -143,7 +143,7 @@ export default async function DeliverableDetailPage({
 
       {/* File download */}
       {deliverable.fileUrl && (
-        <div className="flex items-center gap-3 rounded-md border p-4">
+        <div className="flex items-center gap-3 rounded-xl border p-4">
           <FileText className="h-8 w-8 text-muted-foreground shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">{deliverable.fileName ?? "Fichier joint"}</p>
@@ -163,7 +163,7 @@ export default async function DeliverableDetailPage({
         <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
           Commentaires ({deliverable.comments.length})
         </h2>
-        <div className="rounded-md border p-3">
+        <div className="rounded-xl border p-3">
           <CommentSection
             comments={deliverable.comments}
             deliverableId={deliverable.id}
@@ -171,10 +171,10 @@ export default async function DeliverableDetailPage({
         </div>
       </div>
 
-      {/* Sticky action bar */}
+      {/* Floating action bar */}
       {needsAction && (
-        <div className="sticky bottom-0 z-40 -mx-4 border-t bg-background/95 backdrop-blur-sm p-4 lg:-mx-6">
-          <div className="max-w-2xl mx-auto">
+        <div className="fixed bottom-4 left-4 right-4 z-50 lg:left-1/2 lg:-translate-x-1/2 lg:max-w-4xl lg:w-[calc(100%-3rem)]">
+          <div className="rounded-xl bg-card/95 backdrop-blur-xl border border-border/50 shadow-float p-4">
             <DeliverableReviewActions deliverableId={deliverable.id} />
           </div>
         </div>

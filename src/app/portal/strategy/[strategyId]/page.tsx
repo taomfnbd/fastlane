@@ -75,14 +75,14 @@ export default async function StrategyDetailPage({
   const showGreenBanner = strategy.status === "APPROVED";
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="space-y-6 animate-fade-up">
       {/* Header */}
       <div>
         <Link href="/portal/strategy" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="h-3.5 w-3.5" />
-          Strategie
+          Strategies
         </Link>
-        <h1 className="text-lg font-semibold tracking-tight">{strategy.title}</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{strategy.title}</h1>
         {strategy.description && (
           <p className="text-sm text-muted-foreground mt-0.5">{strategy.description}</p>
         )}
@@ -97,7 +97,7 @@ export default async function StrategyDetailPage({
 
       {/* Contextual banner */}
       {showAmberBanner && (
-        <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/30 px-4 py-3">
+        <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/30 px-4 py-3">
           <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
           <p className="text-sm text-amber-800 dark:text-amber-300">
             <span className="font-medium">Votre avis est attendu</span> — revisez chaque element et approuvez ou rejetez.
@@ -105,7 +105,7 @@ export default async function StrategyDetailPage({
         </div>
       )}
       {showGreenBanner && (
-        <div className="flex items-center gap-3 rounded-md border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/30 px-4 py-3">
+        <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/30 px-4 py-3">
           <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
           <p className="text-sm text-emerald-800 dark:text-emerald-300">
             <span className="font-medium">Strategie approuvee</span> — aucune action requise.
@@ -123,7 +123,7 @@ export default async function StrategyDetailPage({
         </div>
       )}
 
-      {/* Strategy Items — Collapsible cards */}
+      {/* Strategy Items */}
       {strategy.items.length === 0 ? (
         <p className="text-xs text-muted-foreground py-8 text-center">Aucun element.</p>
       ) : (
@@ -143,7 +143,7 @@ export default async function StrategyDetailPage({
       {/* Global comments */}
       <div>
         <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-3">Commentaires</h2>
-        <div className="rounded-md border p-3">
+        <div className="rounded-xl border p-3">
           <CommentSection
             comments={strategy.comments}
             strategyId={strategy.id}

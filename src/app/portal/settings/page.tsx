@@ -1,6 +1,5 @@
 import { requireClient } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
-import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 
 export const metadata = { title: "Parametres" };
@@ -26,14 +25,16 @@ export default async function PortalSettingsPage() {
   if (!company) return null;
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Parametres" />
+    <div className="space-y-8 animate-fade-up">
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Parametres</h1>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Company info */}
         <div>
           <h2 className="text-sm font-medium mb-3">Entreprise</h2>
-          <div className="rounded-md border divide-y">
+          <div className="rounded-xl border divide-y">
             <div className="px-3 py-2.5 flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Nom</span>
               <span className="text-sm font-medium">{company.name}</span>
@@ -60,7 +61,7 @@ export default async function PortalSettingsPage() {
         {/* Team */}
         <div>
           <h2 className="text-sm font-medium mb-3">Equipe ({company.users.length})</h2>
-          <div className="rounded-md border divide-y">
+          <div className="rounded-xl border divide-y">
             {company.users.map((user) => (
               <div key={user.id} className="flex items-center justify-between px-3 py-2.5">
                 <div className="flex items-center gap-2.5 min-w-0">
