@@ -85,6 +85,11 @@ export async function approveDeliverable(deliverableId: string): Promise<ActionR
 
   if (!deliverable) return { success: false, error: "Not found" };
 
+  // Prevent double-approval
+  if (deliverable.status === "APPROVED") {
+    return { success: false, error: "Already approved" };
+  }
+
   const user = await getUserWithRole(session.user.id);
   if (!user) return { success: false, error: "User not found" };
 

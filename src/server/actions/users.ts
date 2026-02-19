@@ -79,9 +79,13 @@ export async function updateUserRole(
 }
 
 export async function deleteUser(userId: string): Promise<ActionResult> {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   // Don't allow deleting yourself
+  if (session.user.id === userId) {
+    return { success: false, error: "You cannot delete your own account" };
+  }
+
   await prisma.user.delete({ where: { id: userId } });
 
   revalidatePath("/admin/users");

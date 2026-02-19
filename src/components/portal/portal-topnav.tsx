@@ -43,6 +43,7 @@ export function PortalTopnav({
     { label: "Accueil", href: "/portal/dashboard" },
     { label: "Strategies", href: "/portal/strategy", badge: pendingStrategies },
     { label: "Livrables", href: "/portal/deliverables", badge: pendingDeliverables },
+    { label: "Activite", href: "/portal/timeline" },
   ];
 
   function isActive(href: string) {
@@ -62,7 +63,7 @@ export function PortalTopnav({
         {/* Mobile: hamburger */}
         <button
           type="button"
-          className="mr-3 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground lg:hidden"
+          className="mr-3 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:hidden"
           onClick={onMobileMenuOpen}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -87,7 +88,7 @@ export function PortalTopnav({
               key={tab.href}
               href={tab.href}
               className={cn(
-                "relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors",
+                "relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 isActive(tab.href)
                   ? "text-foreground"
                   : "text-muted-foreground hover:text-foreground"
@@ -118,7 +119,7 @@ export function PortalTopnav({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-medium hover:ring-2 hover:ring-ring/20 transition-shadow"
+                className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-medium hover:ring-2 hover:ring-ring/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-shadow"
               >
                 {user.name.charAt(0).toUpperCase()}
               </button>

@@ -89,7 +89,7 @@ export default async function PortalDeliverablesPage() {
                   key={d.id}
                   href={`/portal/deliverables/${d.id}`}
                   className={cn(
-                    "group flex items-center gap-4 rounded-xl bg-card px-4 py-3.5 transition-colors hover:bg-accent",
+                    "group flex items-center gap-4 rounded-xl bg-card px-4 py-3.5 transition-all hover:bg-accent hover:shadow-sm",
                     needsAction && "ring-1 ring-amber-500/20 hover:ring-amber-500/40",
                   )}
                 >
@@ -122,7 +122,7 @@ export default async function PortalDeliverablesPage() {
                 <Link
                   key={d.id}
                   href={`/portal/deliverables/${d.id}`}
-                  className="group flex items-center gap-4 rounded-xl bg-card/40 px-4 py-3.5 transition-colors hover:bg-accent opacity-50"
+                  className="group flex items-center gap-4 rounded-xl bg-card/40 px-4 py-3.5 transition-all hover:bg-accent opacity-60 hover:opacity-80"
                 >
                   <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="min-w-0 flex-1">

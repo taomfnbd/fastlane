@@ -15,11 +15,13 @@ interface Comment {
   id: string;
   content: string;
   createdAt: Date;
+  authorId?: string;
   author: { name: string; image: string | null };
   replies: {
     id: string;
     content: string;
     createdAt: Date;
+    authorId?: string;
     author: { name: string; image: string | null };
   }[];
 }
@@ -36,6 +38,7 @@ interface StrategyItemCardProps {
   index: number;
   strategyId: string;
   strategyStatus: string;
+  currentUserId?: string;
 }
 
 export function StrategyItemCard({
@@ -43,6 +46,7 @@ export function StrategyItemCard({
   index,
   strategyId,
   strategyStatus,
+  currentUserId,
 }: StrategyItemCardProps) {
   const isApproved = item.status === "APPROVED";
   const isPending = item.status === "PENDING" || item.status === "MODIFIED";
@@ -98,6 +102,7 @@ export function StrategyItemCard({
             {/* Comments */}
             <CommentSection
               comments={item.comments}
+              currentUserId={currentUserId}
               strategyItemId={item.id}
               strategyId={strategyId}
             />

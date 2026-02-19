@@ -135,6 +135,7 @@ export default async function StrategyDetailPage({
               index={index}
               strategyId={strategy.id}
               strategyStatus={strategy.status}
+              currentUserId={session.user.id}
             />
           ))}
         </div>
@@ -146,6 +147,7 @@ export default async function StrategyDetailPage({
         <div className="rounded-xl border p-3">
           <CommentSection
             comments={strategy.comments}
+            currentUserId={session.user.id}
             strategyId={strategy.id}
           />
         </div>

@@ -70,6 +70,7 @@ export function DeliverableReviewActions({ deliverableId }: DeliverableReviewAct
         </Button>
         <Button
           size="sm"
+          className="bg-emerald-600 hover:bg-emerald-500 text-white"
           onClick={handleApprove}
           disabled={loading}
         >

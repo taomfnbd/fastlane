@@ -25,7 +25,13 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const body = await request.json();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
   const parsed = statusSchema.safeParse(body);
 
   if (!parsed.success) {
@@ -33,6 +39,12 @@ export async function PATCH(
   }
 
   const { eventId } = await params;
+
+  // Verify event exists
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
+  if (!event) {
+    return NextResponse.json({ error: "Event not found" }, { status: 404 });
+  }
 
   await prisma.event.update({
     where: { id: eventId },

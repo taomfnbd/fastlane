@@ -141,7 +141,7 @@ export default async function PortalDashboardPage() {
       {hasContent && (
         <div className="grid grid-cols-2 gap-4">
           {totalStrategies > 0 && (
-            <div className="flex items-center gap-4 rounded-xl bg-card/50 p-5">
+            <div className="flex items-center gap-4 rounded-xl bg-card/50 p-5 transition-shadow hover:shadow-sm">
               <ProgressRing value={approvedStrategies} max={totalStrategies} />
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Strategies</p>
@@ -152,7 +152,7 @@ export default async function PortalDashboardPage() {
             </div>
           )}
           {totalDeliverables > 0 && (
-            <div className="flex items-center gap-4 rounded-xl bg-card/50 p-5">
+            <div className="flex items-center gap-4 rounded-xl bg-card/50 p-5 transition-shadow hover:shadow-sm">
               <ProgressRing value={approvedDeliverables} max={totalDeliverables} />
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Livrables</p>
@@ -176,7 +176,7 @@ export default async function PortalDashboardPage() {
               <Link
                 key={item.id}
                 href={item.href}
-                className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-accent/50 ring-1 ring-amber-500/10"
+                className="group flex items-center gap-3 px-4 py-3.5 transition-all hover:bg-accent/50 ring-1 ring-amber-500/10"
               >
                 <span className="relative flex h-2 w-2 shrink-0">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -22,43 +22,65 @@ interface StrategyItemReviewProps {
 }
 
 export function StrategyItemReview({ itemId, strategyId }: StrategyItemReviewProps) {
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectComment, setRejectComment] = useState("");
+  const [optimisticStatus, setOptimisticStatus] = useState<"idle" | "approved" | "rejected">("idle");
 
-  async function handleApprove() {
-    setLoading(true);
-    const result = await updateStrategyItemStatus({ id: itemId, status: "APPROVED" });
-    if (result.success) {
-      toast.success("Approuve", { description: "L'equipe Fastlane a ete notifiee" });
-    } else {
-      toast.error("Erreur", { description: result.error });
-    }
-    setLoading(false);
+  function handleApprove() {
+    setOptimisticStatus("approved");
+    startTransition(async () => {
+      const result = await updateStrategyItemStatus({ id: itemId, status: "APPROVED" });
+      if (result.success) {
+        toast.success("Approuve", { description: "L'equipe Fastlane a ete notifiee" });
+      } else {
+        setOptimisticStatus("idle");
+        toast.error("Erreur", { description: result.error });
+      }
+    });
   }
 
-  async function handleRejectConfirm() {
+  function handleRejectConfirm() {
     if (!rejectComment.trim()) return;
 
-    setLoading(true);
+    setOptimisticStatus("rejected");
+    startTransition(async () => {
+      // Post the comment first
+      const commentData = new FormData();
+      commentData.set("content", rejectComment.trim());
+      commentData.set("strategyId", strategyId);
+      commentData.set("strategyItemId", itemId);
+      await addComment(commentData);
 
-    // Post the comment first
-    const commentData = new FormData();
-    commentData.set("content", rejectComment.trim());
-    commentData.set("strategyId", strategyId);
-    commentData.set("strategyItemId", itemId);
-    await addComment(commentData);
+      // Then change the status
+      const result = await updateStrategyItemStatus({ id: itemId, status: "REJECTED" });
+      if (result.success) {
+        toast("Modifications demandees", { description: "Votre commentaire a ete envoye a l'equipe" });
+        setRejectOpen(false);
+        setRejectComment("");
+      } else {
+        setOptimisticStatus("idle");
+        toast.error("Erreur", { description: result.error });
+      }
+    });
+  }
 
-    // Then change the status
-    const result = await updateStrategyItemStatus({ id: itemId, status: "REJECTED" });
-    if (result.success) {
-      toast("Modifications demandees", { description: "Votre commentaire a ete envoye a l'equipe" });
-      setRejectOpen(false);
-      setRejectComment("");
-    } else {
-      toast.error("Erreur", { description: result.error });
-    }
-    setLoading(false);
+  if (optimisticStatus === "approved") {
+    return (
+      <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 animate-fade-up">
+        <Check className="h-3.5 w-3.5" />
+        Approuve
+      </div>
+    );
+  }
+
+  if (optimisticStatus === "rejected") {
+    return (
+      <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 animate-fade-up">
+        <X className="h-3.5 w-3.5" />
+        Modifications demandees
+      </div>
+    );
   }
 
   return (
@@ -67,17 +89,17 @@ export function StrategyItemReview({ itemId, strategyId }: StrategyItemReviewPro
         <Button
           size="sm" variant="outline"
           className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/20"
-          onClick={handleApprove} disabled={loading}
+          onClick={handleApprove} disabled={isPending}
         >
-          {loading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Check className="mr-1 h-3 w-3" />}
+          {isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Check className="mr-1 h-3 w-3" />}
           Approuver
         </Button>
         <Button
           size="sm" variant="outline"
           className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20"
-          onClick={() => setRejectOpen(true)} disabled={loading}
+          onClick={() => setRejectOpen(true)} disabled={isPending}
         >
-          {loading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <X className="mr-1 h-3 w-3" />}
+          {isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <X className="mr-1 h-3 w-3" />}
           Demander des modifications
         </Button>
       </div>
@@ -98,16 +120,16 @@ export function StrategyItemReview({ itemId, strategyId }: StrategyItemReviewPro
             className="resize-none"
           />
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setRejectOpen(false)} disabled={loading}>
+            <Button variant="outline" size="sm" onClick={() => setRejectOpen(false)} disabled={isPending}>
               Annuler
             </Button>
             <Button
               size="sm"
               variant="destructive"
               onClick={handleRejectConfirm}
-              disabled={loading || !rejectComment.trim()}
+              disabled={isPending || !rejectComment.trim()}
             >
-              {loading && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+              {isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
               Confirmer
             </Button>
           </DialogFooter>

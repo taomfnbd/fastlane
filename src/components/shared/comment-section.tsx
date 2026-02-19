@@ -4,24 +4,27 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, Reply } from "lucide-react";
-import { addComment } from "@/server/actions/feedback";
+import { Loader2, Reply, Pencil, Trash2, Check, X } from "lucide-react";
+import { addComment, deleteComment, updateComment } from "@/server/actions/feedback";
 
 interface Comment {
   id: string;
   content: string;
   createdAt: Date;
   author: { name: string; image: string | null };
+  authorId?: string;
   replies: {
     id: string;
     content: string;
     createdAt: Date;
     author: { name: string; image: string | null };
+    authorId?: string;
   }[];
 }
 
 interface CommentSectionProps {
   comments: Comment[];
+  currentUserId?: string;
   strategyId?: string;
   strategyItemId?: string;
   deliverableId?: string;
@@ -29,6 +32,7 @@ interface CommentSectionProps {
 
 export function CommentSection({
   comments,
+  currentUserId,
   strategyId,
   strategyItemId,
   deliverableId,
@@ -37,6 +41,8 @@ export function CommentSection({
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
 
   async function handleSubmit() {
     if (!content.trim()) return;
@@ -79,13 +85,37 @@ export function CommentSection({
     setLoading(false);
   }
 
+  async function handleDelete(commentId: string) {
+    if (!confirm("Supprimer ce commentaire ?")) return;
+    setLoading(true);
+    const result = await deleteComment(commentId);
+    if (!result.success) toast.error(result.error);
+    setLoading(false);
+  }
+
+  async function handleEdit(commentId: string) {
+    if (!editContent.trim()) return;
+    setLoading(true);
+    const result = await updateComment(commentId, editContent);
+    if (result.success) {
+      setEditingId(null);
+      setEditContent("");
+    } else {
+      toast.error(result.error);
+    }
+    setLoading(false);
+  }
+
+  function isOwner(authorId?: string) {
+    return currentUserId && authorId && currentUserId === authorId;
+  }
+
   return (
     <div className="space-y-3">
       {comments.length > 0 && (
         <p className="text-[11px] text-muted-foreground">{comments.length} commentaire{comments.length !== 1 && "s"}</p>
       )}
 
-      {/* Comments */}
       {comments.map((comment) => (
         <div key={comment.id} className="space-y-2">
           <div className="flex gap-2.5">
@@ -95,7 +125,7 @@ export function CommentSection({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium">{comment.author.name}</span>
-                <span className="text-[11px] text-muted-foreground/60">
+                <span className="text-[11px] text-muted-foreground/80">
                   {new Date(comment.createdAt).toLocaleDateString("fr-FR", {
                     day: "numeric",
                     month: "short",
@@ -103,15 +133,64 @@ export function CommentSection({
                     minute: "2-digit",
                   })}
                 </span>
+                {isOwner(comment.authorId) && editingId !== comment.id && (
+                  <span className="inline-flex items-center gap-1 ml-auto">
+                    <button
+                      type="button"
+                      className="text-muted-foreground/60 hover:text-foreground transition-colors p-0.5"
+                      onClick={() => { setEditingId(comment.id); setEditContent(comment.content); }}
+                      title="Modifier"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                    <button
+                      type="button"
+                      className="text-muted-foreground/60 hover:text-destructive transition-colors p-0.5"
+                      onClick={() => handleDelete(comment.id)}
+                      title="Supprimer"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
               </div>
-              <p className="text-xs mt-0.5 whitespace-pre-wrap">{comment.content}</p>
-              <button
-                className="text-[11px] text-muted-foreground hover:text-foreground transition-colors mt-1 inline-flex items-center gap-1"
-                onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
-              >
-                <Reply className="h-3 w-3" />
-                repondre
-              </button>
+
+              {editingId === comment.id ? (
+                <div className="mt-1 space-y-1.5">
+                  <Textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    rows={2}
+                    className="text-xs"
+                    onKeyDown={(e) => {
+                      if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && editContent.trim()) {
+                        e.preventDefault();
+                        handleEdit(comment.id);
+                      }
+                    }}
+                  />
+                  <div className="flex gap-1">
+                    <Button size="sm" className="h-6 text-xs px-2" onClick={() => handleEdit(comment.id)} disabled={loading || !editContent.trim()}>
+                      <Check className="h-3 w-3 mr-1" /> Sauver
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-6 text-xs px-2" onClick={() => { setEditingId(null); setEditContent(""); }}>
+                      <X className="h-3 w-3 mr-1" /> Annuler
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs mt-0.5 whitespace-pre-wrap">{comment.content}</p>
+              )}
+
+              {editingId !== comment.id && (
+                <button
+                  className="text-[11px] text-muted-foreground hover:text-foreground transition-colors mt-1 inline-flex items-center gap-1"
+                  onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+                >
+                  <Reply className="h-3 w-3" />
+                  repondre
+                </button>
+              )}
             </div>
           </div>
 
@@ -124,7 +203,7 @@ export function CommentSection({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium">{reply.author.name}</span>
-                  <span className="text-[11px] text-muted-foreground/60">
+                  <span className="text-[11px] text-muted-foreground/80">
                     {new Date(reply.createdAt).toLocaleDateString("fr-FR", {
                       day: "numeric",
                       month: "short",
@@ -132,6 +211,16 @@ export function CommentSection({
                       minute: "2-digit",
                     })}
                   </span>
+                  {isOwner(reply.authorId) && (
+                    <button
+                      type="button"
+                      className="text-muted-foreground/60 hover:text-destructive transition-colors p-0.5 ml-auto"
+                      onClick={() => handleDelete(reply.id)}
+                      title="Supprimer"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
                 <p className="text-xs mt-0.5 whitespace-pre-wrap">{reply.content}</p>
               </div>

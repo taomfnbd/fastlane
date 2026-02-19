@@ -66,7 +66,7 @@ export default async function PortalStrategyPage() {
                       key={strategy.id}
                       href={`/portal/strategy/${strategy.id}`}
                       className={cn(
-                        "group flex items-center gap-3 rounded-xl bg-card px-4 py-3.5 transition-colors hover:bg-accent",
+                        "group flex items-center gap-3 rounded-xl bg-card px-4 py-3.5 transition-all hover:bg-accent hover:shadow-sm",
                         isPending && "ring-1 ring-amber-500/20 hover:ring-amber-500/40",
                       )}
                     >
@@ -134,7 +134,7 @@ export default async function PortalStrategyPage() {
                     <Link
                       key={strategy.id}
                       href={`/portal/strategy/${strategy.id}`}
-                      className="group flex items-center gap-3 rounded-xl bg-card/40 px-4 py-3.5 transition-colors hover:bg-accent opacity-50"
+                      className="group flex items-center gap-3 rounded-xl bg-card/40 px-4 py-3.5 transition-all hover:bg-accent opacity-60 hover:opacity-80"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">

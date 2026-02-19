@@ -140,12 +140,45 @@ export async function updateStrategyItemStatus(
     return { success: false, error: "Access denied" };
   }
 
-  await prisma.strategyItem.update({
-    where: { id: parsed.data.id },
-    data: { status: parsed.data.status },
+  // Use transaction to prevent race condition when checking all items status
+  await prisma.$transaction(async (tx) => {
+    await tx.strategyItem.update({
+      where: { id: parsed.data.id },
+      data: { status: parsed.data.status },
+    });
+
+    // Check if all items are approved
+    const allItems = await tx.strategyItem.findMany({
+      where: { strategyId: item.strategyId },
+      select: { status: true },
+    });
+
+    const allApproved = allItems.every((i) => i.status === "APPROVED");
+    const hasRejected = allItems.some((i) => i.status === "REJECTED");
+
+    if (allApproved) {
+      await tx.strategy.update({
+        where: { id: item.strategyId },
+        data: { status: "APPROVED" },
+      });
+
+      await tx.activity.create({
+        data: {
+          type: "STRATEGY_APPROVED",
+          message: `approved strategy "${item.strategy.title}"`,
+          userId: session.user.id,
+          strategyId: item.strategyId,
+        },
+      });
+    } else if (hasRejected) {
+      await tx.strategy.update({
+        where: { id: item.strategyId },
+        data: { status: "CHANGES_REQUESTED" },
+      });
+    }
   });
 
-  // Notify admins when client approves/rejects an item
+  // Notify admins when client approves/rejects an item (outside transaction)
   if (!isAdmin(user.role)) {
     if (parsed.data.status === "APPROVED") {
       await notifyAdmins(
@@ -164,36 +197,6 @@ export async function updateStrategyItemStatus(
     }
   }
 
-  // Check if all items are approved
-  const allItems = await prisma.strategyItem.findMany({
-    where: { strategyId: item.strategyId },
-    select: { status: true },
-  });
-
-  const allApproved = allItems.every((i) => i.status === "APPROVED");
-  const hasRejected = allItems.some((i) => i.status === "REJECTED");
-
-  if (allApproved) {
-    await prisma.strategy.update({
-      where: { id: item.strategyId },
-      data: { status: "APPROVED" },
-    });
-
-    await prisma.activity.create({
-      data: {
-        type: "STRATEGY_APPROVED",
-        message: `approved strategy "${item.strategy.title}"`,
-        userId: session.user.id,
-        strategyId: item.strategyId,
-      },
-    });
-  } else if (hasRejected) {
-    await prisma.strategy.update({
-      where: { id: item.strategyId },
-      data: { status: "CHANGES_REQUESTED" },
-    });
-  }
-
   revalidatePath("/admin/events");
   revalidatePath("/portal/strategy");
   revalidatePath(`/portal/strategy/${item.strategyId}`);
@@ -207,5 +210,6 @@ export async function deleteStrategyItem(itemId: string): Promise<ActionResult> 
 
   revalidatePath("/admin/events");
   revalidatePath("/portal/strategy");
+  revalidatePath("/portal/dashboard");
   return { success: true, data: undefined };
 }

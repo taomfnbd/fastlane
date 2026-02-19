@@ -106,3 +106,56 @@ export async function addComment(formData: FormData): Promise<ActionResult<{ id:
   revalidatePath("/portal/deliverables");
   return { success: true, data: { id: comment.id } };
 }
+
+export async function deleteComment(commentId: string): Promise<ActionResult> {
+  const session = await getSession();
+  if (!session) return { success: false, error: "Not authenticated" };
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { authorId: true, strategyId: true, deliverableId: true },
+  });
+
+  if (!comment) return { success: false, error: "Comment not found" };
+  if (comment.authorId !== session.user.id) {
+    const user = await getUserWithRole(session.user.id);
+    if (!user || !isAdmin(user.role)) {
+      return { success: false, error: "Access denied" };
+    }
+  }
+
+  await prisma.comment.deleteMany({ where: { parentId: commentId } });
+  await prisma.comment.delete({ where: { id: commentId } });
+
+  revalidatePath("/portal/strategy");
+  revalidatePath("/portal/deliverables");
+  revalidatePath("/admin/events");
+  return { success: true, data: undefined };
+}
+
+export async function updateComment(commentId: string, content: string): Promise<ActionResult> {
+  const session = await getSession();
+  if (!session) return { success: false, error: "Not authenticated" };
+
+  if (!content.trim()) return { success: false, error: "Comment cannot be empty" };
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { authorId: true },
+  });
+
+  if (!comment) return { success: false, error: "Comment not found" };
+  if (comment.authorId !== session.user.id) {
+    return { success: false, error: "Only the author can edit" };
+  }
+
+  await prisma.comment.update({
+    where: { id: commentId },
+    data: { content: content.trim() },
+  });
+
+  revalidatePath("/portal/strategy");
+  revalidatePath("/portal/deliverables");
+  revalidatePath("/admin/events");
+  return { success: true, data: undefined };
+}

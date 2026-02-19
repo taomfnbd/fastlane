@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Target, Package, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Target, Package, Clock, Settings, LogOut } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth-client";
@@ -27,6 +27,7 @@ export function MobileNavSheet({
     { label: "Accueil", href: "/portal/dashboard", icon: LayoutDashboard, badge: 0 },
     { label: "Strategies", href: "/portal/strategy", icon: Target, badge: pendingStrategies },
     { label: "Livrables", href: "/portal/deliverables", icon: Package, badge: pendingDeliverables },
+    { label: "Activite", href: "/portal/timeline", icon: Clock, badge: 0 },
     { label: "Parametres", href: "/portal/settings", icon: Settings, badge: 0 },
   ];
 

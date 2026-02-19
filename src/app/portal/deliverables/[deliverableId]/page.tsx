@@ -105,7 +105,7 @@ export default async function DeliverableDetailPage({
             Apercu
           </h2>
           {deliverable.type === "EMAIL_TEMPLATE" && content.subject ? (
-            <div className="rounded-xl border bg-white dark:bg-muted/30 p-6 space-y-4">
+            <div className="rounded-xl border bg-card p-6 space-y-4">
               <div>
                 <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Objet</p>
                 <p className="text-sm font-medium mt-0.5">{String(content.subject)}</p>
@@ -166,6 +166,7 @@ export default async function DeliverableDetailPage({
         <div className="rounded-xl border p-3">
           <CommentSection
             comments={deliverable.comments}
+            currentUserId={session.user.id}
             deliverableId={deliverable.id}
           />
         </div>
