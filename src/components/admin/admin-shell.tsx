@@ -20,10 +20,11 @@ interface AdminShellProps {
   user: { name: string; email: string };
   notifications: Notification[];
   unreadCount: number;
+  pendingCounts: { pendingStrategies: number; pendingDeliverables: number };
   children: React.ReactNode;
 }
 
-export function AdminShell({ user, notifications, unreadCount, children }: AdminShellProps) {
+export function AdminShell({ user, notifications, unreadCount, pendingCounts, children }: AdminShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -35,6 +36,7 @@ export function AdminShell({ user, notifications, unreadCount, children }: Admin
           user={user}
           collapsed={collapsed}
           onToggle={() => setCollapsed((c) => !c)}
+          pendingCounts={pendingCounts}
         />
       </div>
 
@@ -45,6 +47,7 @@ export function AdminShell({ user, notifications, unreadCount, children }: Admin
             user={user}
             collapsed={false}
             onToggle={() => setMobileOpen(false)}
+            pendingCounts={pendingCounts}
           />
         </SheetContent>
       </Sheet>

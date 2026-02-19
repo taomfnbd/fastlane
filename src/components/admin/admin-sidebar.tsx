@@ -7,6 +7,7 @@ import {
   Calendar,
   Building2,
   Package,
+  Target,
   Users,
   Settings,
   LogOut,
@@ -20,8 +21,9 @@ import { signOut } from "@/lib/auth-client";
 const mainNav = [
   { label: "Tableau de bord", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Evenements", href: "/admin/events", icon: Calendar },
+  { label: "Strategies", href: "/admin/strategies", icon: Target, countKey: "pendingStrategies" as const },
+  { label: "Livrables", href: "/admin/deliverables", icon: Package, countKey: "pendingDeliverables" as const },
   { label: "Entreprises", href: "/admin/companies", icon: Building2 },
-  { label: "Livrables", href: "/admin/events", icon: Package },
 ];
 
 const workspaceNav = [
@@ -33,18 +35,20 @@ interface AdminSidebarProps {
   user: { name: string; email: string };
   collapsed: boolean;
   onToggle: () => void;
+  pendingCounts?: { pendingStrategies: number; pendingDeliverables: number };
 }
 
-export function AdminSidebar({ user, collapsed, onToggle }: AdminSidebarProps) {
+export function AdminSidebar({ user, collapsed, onToggle, pendingCounts }: AdminSidebarProps) {
   const pathname = usePathname();
 
   function NavItem({ item }: { item: (typeof mainNav)[0] }) {
     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+    const count = item.countKey && pendingCounts ? pendingCounts[item.countKey] : 0;
     return (
       <Link
         href={item.href}
         className={cn(
-          "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors duration-150",
+          "relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors duration-150",
           isActive
             ? "bg-accent text-accent-foreground"
             : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
@@ -52,7 +56,19 @@ export function AdminSidebar({ user, collapsed, onToggle }: AdminSidebarProps) {
         title={collapsed ? item.label : undefined}
       >
         <item.icon className="h-4 w-4 shrink-0" />
-        {!collapsed && <span>{item.label}</span>}
+        {!collapsed && (
+          <>
+            <span className="flex-1">{item.label}</span>
+            {count > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500/15 px-1.5 text-[11px] font-medium text-amber-600 tabular-nums">
+                {count}
+              </span>
+            )}
+          </>
+        )}
+        {collapsed && count > 0 && (
+          <span className="absolute right-1 top-0.5 h-2 w-2 rounded-full bg-amber-500" />
+        )}
       </Link>
     );
   }
