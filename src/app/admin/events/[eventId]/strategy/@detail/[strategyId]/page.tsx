@@ -4,13 +4,12 @@ import { requireAdmin } from "@/lib/auth-server";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CommentSection } from "@/components/shared/comment-section";
 import { QuestionSection } from "@/components/shared/question-section";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
+import { DetailPanel } from "@/components/shared/detail-panel";
 import { EditStrategyDialog } from "@/components/admin/edit-strategy-dialog";
 import { EditStrategyItemDialog } from "@/components/admin/edit-strategy-item-dialog";
 import { ResubmitButton } from "@/components/admin/resubmit-button";
 import { SubmitStrategyButton } from "@/components/admin/submit-strategy-button";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 
 export async function generateMetadata({ params }: { params: Promise<{ strategyId: string }> }) {
   const { strategyId } = await params;
@@ -81,11 +80,17 @@ export default async function AdminStrategyDetailPage({
   const companyId = strategy.eventCompany.company.id;
 
   return (
-    <div className="space-y-6">
+    <DetailPanel>
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/admin/dashboard" },
+          { label: "Evenements", href: "/admin/events" },
+          { label: strategy.eventCompany.event.name, href: `/admin/events/${eventId}` },
+          { label: strategy.title },
+        ]}
+      />
+
       <div>
-        <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 h-7 text-xs text-muted-foreground">
-          <Link href={`/admin/events/${eventId}/strategy`}><ArrowLeft className="mr-1 h-3 w-3" />Strategies</Link>
-        </Button>
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-semibold tracking-tight">{strategy.title}</h1>
           <EditStrategyDialog strategy={{ id: strategy.id, title: strategy.title, description: strategy.description }} />
@@ -160,6 +165,6 @@ export default async function AdminStrategyDetailPage({
           />
         </div>
       </div>
-    </div>
+    </DetailPanel>
   );
 }
