@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSession, isAdmin } from "@/lib/auth-server";
 import { z } from "zod";
@@ -50,6 +51,10 @@ export async function PATCH(
     where: { id: eventId },
     data: { status: parsed.data.status },
   });
+
+  revalidatePath("/admin/events");
+  revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath("/admin/dashboard");
 
   return NextResponse.json({ success: true });
 }
