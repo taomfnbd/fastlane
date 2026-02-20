@@ -6,12 +6,14 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  const adapter = new PrismaPg({
+    connectionString: process.env.DATABASE_URL,
+    max: 5,
+    idleTimeoutMillis: 10000,
+  });
   return new PrismaClient({ adapter });
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+globalForPrisma.prisma = prisma;

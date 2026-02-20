@@ -12,28 +12,22 @@ export const metadata = { title: "Tableau de bord" };
 export default async function AdminDashboardPage() {
   await requireAdmin();
 
+  // 9 queries instead of 12+ — groupBy replaces 3 individual count() calls each
   const [
     activeEventsCount,
     totalCompanies,
-    pendingDeliverables,
-    totalDeliverables,
-    approvedDeliverables,
-    pendingStrategies,
-    totalStrategies,
-    approvedStrategies,
+    deliverablesByStatus,
+    strategiesByStatus,
     activeEvents,
-    actionItems,
+    pendingStrats,
+    pendingDelivs,
     recentActivities,
     unansweredQuestions,
   ] = await Promise.all([
     prisma.event.count({ where: { status: "ACTIVE" } }),
     prisma.company.count(),
-    prisma.deliverable.count({ where: { status: { in: ["IN_REVIEW", "CHANGES_REQUESTED"] } } }),
-    prisma.deliverable.count(),
-    prisma.deliverable.count({ where: { status: { in: ["APPROVED", "DELIVERED"] } } }),
-    prisma.strategy.count({ where: { status: { in: ["PENDING_REVIEW", "CHANGES_REQUESTED"] } } }),
-    prisma.strategy.count(),
-    prisma.strategy.count({ where: { status: "APPROVED" } }),
+    prisma.deliverable.groupBy({ by: ["status"], _count: true }),
+    prisma.strategy.groupBy({ by: ["status"], _count: true }),
     prisma.event.findMany({
       where: { status: "ACTIVE" },
       orderBy: { startDate: "desc" },
@@ -47,34 +41,32 @@ export default async function AdminDashboardPage() {
         },
       },
     }),
-    Promise.all([
-      prisma.strategy.findMany({
-        where: { status: { in: ["PENDING_REVIEW", "CHANGES_REQUESTED"] } },
-        take: 10,
-        orderBy: { updatedAt: "desc" },
-        include: {
-          eventCompany: {
-            include: {
-              company: { select: { name: true } },
-              event: { select: { id: true, name: true } },
-            },
+    prisma.strategy.findMany({
+      where: { status: { in: ["PENDING_REVIEW", "CHANGES_REQUESTED"] } },
+      take: 10,
+      orderBy: { updatedAt: "desc" },
+      include: {
+        eventCompany: {
+          include: {
+            company: { select: { name: true } },
+            event: { select: { id: true, name: true } },
           },
         },
-      }),
-      prisma.deliverable.findMany({
-        where: { status: { in: ["IN_REVIEW", "CHANGES_REQUESTED"] } },
-        take: 10,
-        orderBy: { updatedAt: "desc" },
-        include: {
-          eventCompany: {
-            include: {
-              company: { select: { name: true } },
-              event: { select: { id: true, name: true } },
-            },
+      },
+    }),
+    prisma.deliverable.findMany({
+      where: { status: { in: ["IN_REVIEW", "CHANGES_REQUESTED"] } },
+      take: 10,
+      orderBy: { updatedAt: "desc" },
+      include: {
+        eventCompany: {
+          include: {
+            company: { select: { name: true } },
+            event: { select: { id: true, name: true } },
           },
         },
-      }),
-    ]),
+      },
+    }),
     prisma.activity.findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
@@ -93,6 +85,23 @@ export default async function AdminDashboardPage() {
       take: 10,
     }),
   ]);
+
+  // Extract counts from groupBy results
+  const delivCount = (statuses: string[]) =>
+    deliverablesByStatus
+      .filter((g) => statuses.includes(g.status))
+      .reduce((sum, g) => sum + g._count, 0);
+  const totalDeliverables = deliverablesByStatus.reduce((sum, g) => sum + g._count, 0);
+  const pendingDeliverables = delivCount(["IN_REVIEW", "CHANGES_REQUESTED"]);
+  const approvedDeliverables = delivCount(["APPROVED", "DELIVERED"]);
+
+  const stratCount = (statuses: string[]) =>
+    strategiesByStatus
+      .filter((g) => statuses.includes(g.status))
+      .reduce((sum, g) => sum + g._count, 0);
+  const totalStrategies = strategiesByStatus.reduce((sum, g) => sum + g._count, 0);
+  const pendingStrategies = stratCount(["PENDING_REVIEW", "CHANGES_REQUESTED"]);
+  const approvedStrategies = stratCount(["APPROVED"]);
 
   const delivProgress = totalDeliverables > 0 ? Math.round((approvedDeliverables / totalDeliverables) * 100) : 0;
   const stratProgress = totalStrategies > 0 ? Math.round((approvedStrategies / totalStrategies) * 100) : 0;
@@ -132,7 +141,6 @@ export default async function AdminDashboardPage() {
     },
   ];
 
-  const [pendingStrats, pendingDelivs] = actionItems;
   const allActionItems = [
     ...pendingStrats.map((s) => ({
       kind: "strategy" as const,
