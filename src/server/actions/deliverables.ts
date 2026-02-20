@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getSession, getUserWithRole, isAdmin } from "@/lib/auth-server";
-import { createDeliverableSchema } from "@/types";
+import { createDeliverableSchema, updateDeliverableSchema } from "@/types";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/types";
 import { notifyAdmins, notifyClientUsers } from "@/lib/notify";
@@ -172,5 +172,136 @@ export async function requestDeliverableChanges(deliverableId: string): Promise<
   revalidatePath("/admin/events");
   revalidatePath("/portal/deliverables");
   revalidatePath(`/portal/deliverables/${deliverableId}`);
+  return { success: true, data: undefined };
+}
+
+export async function updateDeliverable(formData: FormData): Promise<ActionResult> {
+  const session = await requireAdmin();
+
+  const parsed = updateDeliverableSchema.safeParse({
+    id: formData.get("id"),
+    title: formData.get("title"),
+    description: formData.get("description") || undefined,
+    type: formData.get("type"),
+    content: formData.get("content") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const deliverable = await prisma.deliverable.findUnique({
+    where: { id: parsed.data.id },
+    select: { id: true },
+  });
+  if (!deliverable) return { success: false, error: "Deliverable not found" };
+
+  await prisma.deliverable.update({
+    where: { id: parsed.data.id },
+    data: {
+      title: parsed.data.title,
+      description: parsed.data.description ?? null,
+      type: parsed.data.type,
+      ...(parsed.data.content !== undefined ? { content: { text: parsed.data.content } } : {}),
+    },
+  });
+
+  await prisma.activity.create({
+    data: {
+      type: "DELIVERABLE_SUBMITTED",
+      message: `updated deliverable "${parsed.data.title}"`,
+      userId: session.user.id,
+      deliverableId: parsed.data.id,
+    },
+  });
+
+  revalidatePath("/admin/events");
+  revalidatePath("/admin/deliverables");
+  revalidatePath("/portal/deliverables");
+  return { success: true, data: undefined };
+}
+
+export async function resubmitDeliverable(deliverableId: string): Promise<ActionResult> {
+  const session = await requireAdmin();
+
+  const deliverable = await prisma.deliverable.findUnique({
+    where: { id: deliverableId },
+    select: { id: true, title: true, status: true, version: true, eventCompanyId: true },
+  });
+
+  if (!deliverable) return { success: false, error: "Deliverable not found" };
+  if (deliverable.status !== "CHANGES_REQUESTED") {
+    return { success: false, error: "Deliverable must be in CHANGES_REQUESTED status to resubmit" };
+  }
+
+  await prisma.deliverable.update({
+    where: { id: deliverableId },
+    data: {
+      status: "IN_REVIEW",
+      version: { increment: 1 },
+    },
+  });
+
+  await prisma.activity.create({
+    data: {
+      type: "DELIVERABLE_SUBMITTED",
+      message: `resubmitted "${deliverable.title}" (v${deliverable.version + 1})`,
+      userId: session.user.id,
+      deliverableId,
+    },
+  });
+
+  await notifyClientUsers(
+    deliverable.eventCompanyId,
+    "Livrable revise",
+    `"${deliverable.title}" a ete revise et soumis a nouveau (v${deliverable.version + 1}).`,
+    `/portal/deliverables/${deliverableId}`,
+  );
+
+  revalidatePath("/admin/events");
+  revalidatePath("/admin/deliverables");
+  revalidatePath("/portal/deliverables");
+  revalidatePath("/portal/dashboard");
+  return { success: true, data: undefined };
+}
+
+export async function markDeliverableDelivered(deliverableId: string): Promise<ActionResult> {
+  const session = await requireAdmin();
+
+  const deliverable = await prisma.deliverable.findUnique({
+    where: { id: deliverableId },
+    select: { id: true, title: true, status: true, eventCompanyId: true },
+  });
+
+  if (!deliverable) return { success: false, error: "Deliverable not found" };
+  if (deliverable.status !== "APPROVED") {
+    return { success: false, error: "Deliverable must be APPROVED before marking as delivered" };
+  }
+
+  await prisma.deliverable.update({
+    where: { id: deliverableId },
+    data: { status: "DELIVERED" },
+  });
+
+  await prisma.activity.create({
+    data: {
+      type: "STATUS_CHANGED",
+      message: `marked "${deliverable.title}" as delivered`,
+      userId: session.user.id,
+      deliverableId,
+    },
+  });
+
+  await notifyClientUsers(
+    deliverable.eventCompanyId,
+    "Livrable livre",
+    `"${deliverable.title}" a ete livre.`,
+    `/portal/deliverables/${deliverableId}`,
+  );
+
+  revalidatePath("/admin/events");
+  revalidatePath("/admin/deliverables");
+  revalidatePath("/portal/deliverables");
+  revalidatePath("/portal/dashboard");
   return { success: true, data: undefined };
 }
