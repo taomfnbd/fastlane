@@ -46,10 +46,19 @@ export async function createDeliverable(formData: FormData): Promise<ActionResul
 export async function submitDeliverableForReview(deliverableId: string): Promise<ActionResult> {
   const session = await requireAdmin();
 
-  const deliverable = await prisma.deliverable.update({
+  const deliverable = await prisma.deliverable.findUnique({
+    where: { id: deliverableId },
+    select: { id: true, title: true, status: true, eventCompanyId: true },
+  });
+
+  if (!deliverable) return { success: false, error: "Deliverable not found" };
+  if (deliverable.status !== "DRAFT") {
+    return { success: false, error: "Le livrable doit etre en brouillon pour etre soumis" };
+  }
+
+  await prisma.deliverable.update({
     where: { id: deliverableId },
     data: { status: "IN_REVIEW" },
-    select: { id: true, title: true, eventCompanyId: true },
   });
 
   await prisma.activity.create({
@@ -85,9 +94,9 @@ export async function approveDeliverable(deliverableId: string): Promise<ActionR
 
   if (!deliverable) return { success: false, error: "Not found" };
 
-  // Prevent double-approval
-  if (deliverable.status === "APPROVED") {
-    return { success: false, error: "Already approved" };
+  // Only allow approval from valid review states
+  if (deliverable.status !== "IN_REVIEW" && deliverable.status !== "CHANGES_REQUESTED") {
+    return { success: false, error: "Le livrable doit etre en revision pour etre approuve" };
   }
 
   const user = await getUserWithRole(session.user.id);
@@ -137,6 +146,11 @@ export async function requestDeliverableChanges(deliverableId: string): Promise<
   });
 
   if (!deliverable) return { success: false, error: "Not found" };
+
+  // Only allow change requests from valid review states
+  if (deliverable.status !== "IN_REVIEW") {
+    return { success: false, error: "Le livrable n'est pas dans un etat qui permet des modifications" };
+  }
 
   const user = await getUserWithRole(session.user.id);
   if (!user) return { success: false, error: "User not found" };

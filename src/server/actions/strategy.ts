@@ -78,10 +78,19 @@ export async function addStrategyItem(formData: FormData): Promise<ActionResult<
 export async function submitStrategyForReview(strategyId: string): Promise<ActionResult> {
   const session = await requireAdmin();
 
-  const strategy = await prisma.strategy.update({
+  const strategy = await prisma.strategy.findUnique({
+    where: { id: strategyId },
+    select: { id: true, title: true, status: true, eventCompanyId: true },
+  });
+
+  if (!strategy) return { success: false, error: "Strategy not found" };
+  if (strategy.status !== "DRAFT") {
+    return { success: false, error: "La strategie doit etre en brouillon pour etre soumise" };
+  }
+
+  await prisma.strategy.update({
     where: { id: strategyId },
     data: { status: "PENDING_REVIEW" },
-    select: { id: true, title: true, eventCompanyId: true },
   });
 
   // Create activity
@@ -140,14 +149,13 @@ export async function updateStrategyItemStatus(
     return { success: false, error: "Access denied" };
   }
 
-  // Use transaction to prevent race condition when checking all items status
-  await prisma.$transaction(async (tx) => {
+  // Transaction returns the final status so notifications are based on committed state
+  const result = await prisma.$transaction(async (tx) => {
     await tx.strategyItem.update({
       where: { id: parsed.data.id },
       data: { status: parsed.data.status },
     });
 
-    // Check if all items are approved
     const allItems = await tx.strategyItem.findMany({
       where: { strategyId: item.strategyId },
       select: { status: true },
@@ -161,7 +169,6 @@ export async function updateStrategyItemStatus(
         where: { id: item.strategyId },
         data: { status: "APPROVED" },
       });
-
       await tx.activity.create({
         data: {
           type: "STRATEGY_APPROVED",
@@ -175,7 +182,6 @@ export async function updateStrategyItemStatus(
         where: { id: item.strategyId },
         data: { status: "CHANGES_REQUESTED" },
       });
-
       await tx.activity.create({
         data: {
           type: "STRATEGY_REJECTED",
@@ -185,9 +191,11 @@ export async function updateStrategyItemStatus(
         },
       });
     }
+
+    return { allApproved, hasRejected };
   });
 
-  // Notify admins when client approves/rejects an item (outside transaction)
+  // Notifications sent AFTER transaction committed, but based on committed state
   if (!isAdmin(user.role)) {
     if (parsed.data.status === "APPROVED") {
       await notifyAdmins(
