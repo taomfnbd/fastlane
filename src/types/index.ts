@@ -45,10 +45,22 @@ export const createStrategySchema = z.object({
   eventCompanyId: z.string().cuid(),
 });
 
+export const updateStrategySchema = z.object({
+  id: z.string().cuid(),
+  title: z.string().min(1, "Title is required").max(200),
+  description: z.string().max(2000).optional(),
+});
+
 export const createStrategyItemSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   description: z.string().max(2000).optional(),
   strategyId: z.string().cuid(),
+});
+
+export const updateStrategyItemSchema = z.object({
+  id: z.string().cuid(),
+  title: z.string().min(1, "Title is required").max(200),
+  description: z.string().max(2000).optional(),
 });
 
 export const updateStrategyItemStatusSchema = z.object({
@@ -73,6 +85,22 @@ export const createDeliverableSchema = z.object({
   eventCompanyId: z.string().cuid(),
 });
 
+export const updateDeliverableSchema = z.object({
+  id: z.string().cuid(),
+  title: z.string().min(1, "Title is required").max(200),
+  description: z.string().max(2000).optional(),
+  type: z.enum([
+    "EMAIL_TEMPLATE",
+    "LANDING_PAGE",
+    "SOCIAL_POST",
+    "SCRIPT",
+    "DOCUMENT",
+    "AD_CREATIVE",
+    "OTHER",
+  ]),
+  content: z.string().max(50000).optional(),
+});
+
 // ==================== Comment Schemas ====================
 
 export const createCommentSchema = z.object({
@@ -81,6 +109,19 @@ export const createCommentSchema = z.object({
   strategyItemId: z.string().cuid().optional(),
   deliverableId: z.string().cuid().optional(),
   parentId: z.string().cuid().optional(),
+});
+
+export const createQuestionSchema = z.object({
+  content: z.string().min(1, "Question cannot be empty").max(5000),
+  targetCompanyId: z.string().cuid(),
+  strategyId: z.string().cuid().optional(),
+  deliverableId: z.string().cuid().optional(),
+  strategyItemId: z.string().cuid().optional(),
+});
+
+export const answerQuestionSchema = z.object({
+  id: z.string().cuid(),
+  answer: z.string().min(1, "Answer cannot be empty").max(5000),
 });
 
 // ==================== Action Result ====================
