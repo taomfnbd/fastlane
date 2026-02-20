@@ -20,7 +20,7 @@ interface AdminShellProps {
   user: { name: string; email: string };
   notifications: Notification[];
   unreadCount: number;
-  pendingCounts: { pendingStrategies: number; pendingDeliverables: number };
+  pendingCounts: { pendingStrategies: number; pendingDeliverables: number; activeEvents: number; unansweredQuestions: number };
   children: React.ReactNode;
 }
 

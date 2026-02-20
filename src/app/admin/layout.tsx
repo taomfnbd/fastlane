@@ -9,7 +9,7 @@ export default async function AdminLayout({
 }) {
   const session = await requireAdmin();
 
-  const [user, notifications, pendingStrategies, pendingDeliverables] = await Promise.all([
+  const [user, notifications, pendingStrategies, pendingDeliverables, activeEvents, unansweredQuestions] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: { name: true, email: true },
@@ -22,6 +22,8 @@ export default async function AdminLayout({
     }),
     prisma.strategy.count({ where: { status: { in: ["PENDING_REVIEW", "CHANGES_REQUESTED"] } } }),
     prisma.deliverable.count({ where: { status: { in: ["IN_REVIEW", "CHANGES_REQUESTED"] } } }),
+    prisma.event.count({ where: { status: "ACTIVE" } }),
+    prisma.question.count({ where: { answeredAt: null } }),
   ]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -39,7 +41,7 @@ export default async function AdminLayout({
       }}
       notifications={serializedNotifications}
       unreadCount={unreadCount}
-      pendingCounts={{ pendingStrategies, pendingDeliverables }}
+      pendingCounts={{ pendingStrategies, pendingDeliverables, activeEvents, unansweredQuestions }}
     >
       {children}
     </AdminShell>

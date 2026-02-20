@@ -19,8 +19,8 @@ import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/auth-client";
 
 const mainNav = [
-  { label: "Tableau de bord", href: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Evenements", href: "/admin/events", icon: Calendar },
+  { label: "Tableau de bord", href: "/admin/dashboard", icon: LayoutDashboard, countKey: "unansweredQuestions" as const },
+  { label: "Evenements", href: "/admin/events", icon: Calendar, countKey: "activeEvents" as const },
   { label: "Strategies", href: "/admin/strategies", icon: Target, countKey: "pendingStrategies" as const },
   { label: "Livrables", href: "/admin/deliverables", icon: Package, countKey: "pendingDeliverables" as const },
   { label: "Entreprises", href: "/admin/companies", icon: Building2 },
@@ -35,7 +35,7 @@ interface AdminSidebarProps {
   user: { name: string; email: string };
   collapsed: boolean;
   onToggle: () => void;
-  pendingCounts?: { pendingStrategies: number; pendingDeliverables: number };
+  pendingCounts?: { pendingStrategies: number; pendingDeliverables: number; activeEvents: number; unansweredQuestions: number };
 }
 
 export function AdminSidebar({ user, collapsed, onToggle, pendingCounts }: AdminSidebarProps) {
