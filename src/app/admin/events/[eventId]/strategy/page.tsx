@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Target } from "lucide-react";
 import Link from "next/link";
 import { CreateStrategyDialog } from "@/components/admin/create-strategy-dialog";
+import { StrategyListActions } from "@/components/admin/strategy-list-actions";
 
 export const metadata = { title: "Strategies" };
 
@@ -60,19 +61,22 @@ export default async function StrategyListPage({
               const approved = strategy.items.filter((i) => i.status === "APPROVED").length;
               const total = strategy.items.length;
               return (
-                <Link
+                <div
                   key={strategy.id}
-                  href={`/admin/events/${eventId}/strategy/${strategy.id}`}
                   className="flex items-center gap-2.5 rounded-md px-2 py-2 hover:bg-accent/50 transition-colors"
                 >
-                  <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/admin/events/${eventId}/strategy/${strategy.id}`}
+                    className="min-w-0 flex-1"
+                  >
                     <p className="text-sm font-medium truncate">{strategy.title}</p>
                     <p className="text-[11px] text-muted-foreground">
                       {total > 0 ? `${approved}/${total} items` : "0 items"}
                     </p>
-                  </div>
+                  </Link>
                   <StatusBadge status={strategy.status} />
-                </Link>
+                  <StrategyListActions strategyId={strategy.id} status={strategy.status} />
+                </div>
               );
             })
           )}

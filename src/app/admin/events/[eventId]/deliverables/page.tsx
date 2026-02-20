@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Package } from "lucide-react";
 import Link from "next/link";
 import { CreateDeliverableDialog } from "@/components/admin/create-deliverable-dialog";
+import { DeliverableListActions } from "@/components/admin/deliverable-list-actions";
 
 export const metadata = { title: "Gestion des livrables" };
 
@@ -54,19 +55,22 @@ export default async function EventDeliverablesPage({
             <p className="text-xs text-muted-foreground/60 px-1 py-3">Aucun livrable</p>
           ) : (
             ec.deliverables.map((d) => (
-              <Link
+              <div
                 key={d.id}
-                href={`/admin/events/${eventId}/deliverables/${d.id}`}
                 className="flex items-center gap-2.5 rounded-md px-2 py-2 hover:bg-accent/50 transition-colors"
               >
-                <div className="min-w-0 flex-1">
+                <Link
+                  href={`/admin/events/${eventId}/deliverables/${d.id}`}
+                  className="min-w-0 flex-1"
+                >
                   <p className="text-sm font-medium truncate">{d.title}</p>
                   <p className="text-[11px] text-muted-foreground">
                     {d.type.replace(/_/g, " ").toLowerCase()} · v{d.version}
                   </p>
-                </div>
+                </Link>
                 <StatusBadge status={d.status} />
-              </Link>
+                <DeliverableListActions deliverableId={d.id} status={d.status} />
+              </div>
             ))
           )}
         </div>
