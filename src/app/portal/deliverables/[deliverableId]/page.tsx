@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireClient } from "@/lib/auth-server";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CommentSection } from "@/components/shared/comment-section";
+import { QuestionSection } from "@/components/shared/question-section";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 import Link from "next/link";
@@ -46,6 +47,10 @@ export default async function DeliverableDetailPage({
         },
         where: { parentId: null },
         orderBy: { createdAt: "asc" },
+      },
+      questions: {
+        include: { author: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
       },
     },
   });
@@ -167,6 +172,20 @@ export default async function DeliverableDetailPage({
           <CommentSection
             comments={deliverable.comments}
             currentUserId={session.user.id}
+            deliverableId={deliverable.id}
+          />
+        </div>
+      </div>
+
+      {/* Questions */}
+      <div>
+        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+          Questions
+        </h2>
+        <div className="rounded-xl border p-3">
+          <QuestionSection
+            questions={deliverable.questions}
+            isAdmin={false}
             deliverableId={deliverable.id}
           />
         </div>

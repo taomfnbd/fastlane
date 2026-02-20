@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireClient } from "@/lib/auth-server";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CommentSection } from "@/components/shared/comment-section";
+import { QuestionSection } from "@/components/shared/question-section";
 import { StrategyItemCard } from "@/components/portal/strategy-item-card";
 import { ArrowLeft, AlertTriangle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
@@ -48,6 +49,10 @@ export default async function StrategyDetailPage({
             where: { parentId: null },
             orderBy: { createdAt: "asc" },
           },
+          questions: {
+            include: { author: { select: { name: true } } },
+            orderBy: { createdAt: "desc" },
+          },
         },
       },
       comments: {
@@ -60,6 +65,11 @@ export default async function StrategyDetailPage({
         },
         where: { parentId: null, strategyItemId: null },
         orderBy: { createdAt: "asc" },
+      },
+      questions: {
+        where: { strategyItemId: null },
+        include: { author: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
       },
     },
   });
@@ -148,6 +158,18 @@ export default async function StrategyDetailPage({
           <CommentSection
             comments={strategy.comments}
             currentUserId={session.user.id}
+            strategyId={strategy.id}
+          />
+        </div>
+      </div>
+
+      {/* Global questions */}
+      <div>
+        <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-3">Questions</h2>
+        <div className="rounded-xl border p-3">
+          <QuestionSection
+            questions={strategy.questions}
+            isAdmin={false}
             strategyId={strategy.id}
           />
         </div>
