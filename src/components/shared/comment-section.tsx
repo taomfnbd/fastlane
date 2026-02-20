@@ -72,6 +72,7 @@ export function CommentSection({
     formData.set("content", replyContent);
     formData.set("parentId", parentId);
     if (strategyId) formData.set("strategyId", strategyId);
+    if (strategyItemId) formData.set("strategyItemId", strategyItemId);
     if (deliverableId) formData.set("deliverableId", deliverableId);
 
     const result = await addComment(formData);
