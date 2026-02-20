@@ -3,8 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Button } from "@/components/ui/button";
-import { Calendar, Globe, Target, Package, ArrowLeft } from "lucide-react";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
+import { DetailPanel } from "@/components/shared/detail-panel";
+import { Calendar, Globe, Target, Package } from "lucide-react";
 import Link from "next/link";
 
 export async function generateMetadata({ params }: { params: Promise<{ companyId: string }> }) {
@@ -22,11 +23,9 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   if (!company) notFound();
 
   return (
-    <div className="space-y-6">
+    <DetailPanel>
+      <Breadcrumbs items={[{ label: "Dashboard", href: "/admin/dashboard" }, { label: "Entreprises", href: "/admin/companies" }, { label: company.name }]} />
       <div>
-        <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 h-7 text-xs text-muted-foreground">
-          <Link href="/admin/companies"><ArrowLeft className="mr-1 h-3 w-3" />Entreprises</Link>
-        </Button>
         <PageHeader title={company.name} description={company.description ?? undefined} />
       </div>
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
@@ -82,6 +81,6 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           )}
         </div>
       </div>
-    </div>
+    </DetailPanel>
   );
 }
