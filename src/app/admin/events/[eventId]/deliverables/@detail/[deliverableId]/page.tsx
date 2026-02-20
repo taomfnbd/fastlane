@@ -4,20 +4,15 @@ import { requireAdmin } from "@/lib/auth-server";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { CommentSection } from "@/components/shared/comment-section";
 import { QuestionSection } from "@/components/shared/question-section";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
+import { DetailPanel } from "@/components/shared/detail-panel";
 import { EditDeliverableDialog } from "@/components/admin/edit-deliverable-dialog";
 import { ResubmitButton } from "@/components/admin/resubmit-button";
 import { MarkDeliveredButton } from "@/components/admin/mark-delivered-button";
 import { SubmitDeliverableButton } from "@/components/admin/submit-deliverable-button";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, Download } from "lucide-react";
-import Link from "next/link";
+import { FileText, Download } from "lucide-react";
 import { relativeTime } from "@/lib/utils";
-
-export async function generateMetadata({ params }: { params: Promise<{ deliverableId: string }> }) {
-  const { deliverableId } = await params;
-  const d = await prisma.deliverable.findUnique({ where: { id: deliverableId }, select: { title: true } });
-  return { title: d?.title ?? "Livrable" };
-}
 
 export default async function AdminDeliverableDetailPage({
   params,
@@ -61,11 +56,17 @@ export default async function AdminDeliverableDetailPage({
   const companyId = deliverable.eventCompany.company.id;
 
   return (
-    <div className="space-y-6">
+    <DetailPanel>
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/admin/dashboard" },
+          { label: "Evenements", href: "/admin/events" },
+          { label: deliverable.eventCompany.event.name, href: `/admin/events/${eventId}` },
+          { label: deliverable.title },
+        ]}
+      />
+
       <div>
-        <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 h-7 text-xs text-muted-foreground">
-          <Link href={`/admin/events/${eventId}/deliverables`}><ArrowLeft className="mr-1 h-3 w-3" />Livrables</Link>
-        </Button>
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-semibold tracking-tight">{deliverable.title}</h1>
           <EditDeliverableDialog deliverable={{ id: deliverable.id, title: deliverable.title, description: deliverable.description, type: deliverable.type, content: deliverable.content }} />
@@ -128,6 +129,6 @@ export default async function AdminDeliverableDetailPage({
           />
         </div>
       </div>
-    </div>
+    </DetailPanel>
   );
 }

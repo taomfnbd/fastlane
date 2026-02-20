@@ -1,81 +1,84 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
-import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Button } from "@/components/ui/button";
-import { Package, ArrowLeft } from "lucide-react";
+import { Package } from "lucide-react";
 import Link from "next/link";
 import { CreateDeliverableDialog } from "@/components/admin/create-deliverable-dialog";
-import { SubmitDeliverableButton } from "@/components/admin/submit-deliverable-button";
-import { EditDeliverableDialog } from "@/components/admin/edit-deliverable-dialog";
-import { ResubmitButton } from "@/components/admin/resubmit-button";
-import { MarkDeliveredButton } from "@/components/admin/mark-delivered-button";
 
 export const metadata = { title: "Gestion des livrables" };
 
-export default async function EventDeliverablesPage({ params, searchParams }: { params: Promise<{ eventId: string }>; searchParams: Promise<{ company?: string }> }) {
+export default async function EventDeliverablesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ eventId: string }>;
+  searchParams: Promise<{ company?: string }>;
+}) {
   await requireAdmin();
   const { eventId } = await params;
   const { company: companyFilter } = await searchParams;
-  const event = await prisma.event.findUnique({ where: { id: eventId }, include: { companies: { include: { company: { select: { id: true, name: true } }, deliverables: { orderBy: { createdAt: "desc" } } }, ...(companyFilter ? { where: { companyId: companyFilter } } : {}) } } });
+
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: {
+      companies: {
+        include: {
+          company: { select: { id: true, name: true } },
+          deliverables: { orderBy: { createdAt: "desc" } },
+        },
+        ...(companyFilter ? { where: { companyId: companyFilter } } : {}),
+      },
+    },
+  });
+
   if (!event) notFound();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 h-7 text-xs text-muted-foreground">
-          <Link href={`/admin/events/${eventId}`}><ArrowLeft className="mr-1 h-3 w-3" />{event.name}</Link>
-        </Button>
-        <PageHeader title="Livrables" />
+    <div className="p-3 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs text-muted-foreground">{event.name}</p>
+          <h2 className="text-sm font-semibold">Livrables</h2>
+        </div>
       </div>
+
       {event.companies.map((ec) => (
-        <div key={ec.id} className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium">{ec.company.name}</h2>
+        <div key={ec.id} className="space-y-1">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-xs font-medium text-muted-foreground">{ec.company.name}</p>
             <CreateDeliverableDialog eventCompanyId={ec.id} companyName={ec.company.name} />
           </div>
           {ec.deliverables.length === 0 ? (
-            <EmptyState icon={Package} title="Aucun livrable" description={`Creez un livrable pour ${ec.company.name}.`} action={<CreateDeliverableDialog eventCompanyId={ec.id} companyName={ec.company.name} />} />
+            <p className="text-xs text-muted-foreground/60 px-1 py-3">Aucun livrable</p>
           ) : (
-            <div className="rounded-md border">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-xs text-muted-foreground">
-                    <th className="text-left font-medium px-3 py-2">Titre</th>
-                    <th className="text-left font-medium px-3 py-2 hidden sm:table-cell">Type</th>
-                    <th className="text-left font-medium px-3 py-2 hidden md:table-cell">Version</th>
-                    <th className="text-left font-medium px-3 py-2">Statut</th>
-                    <th className="px-3 py-2 w-8"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {ec.deliverables.map((d) => (
-                    <tr key={d.id} className="hover:bg-accent/50 transition-colors">
-                      <td className="px-3 py-2.5">
-                        <Link href={`/admin/events/${eventId}/deliverables/${d.id}`} className="font-medium hover:underline">{d.title}</Link>
-                        {d.description && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{d.description}</p>}
-                      </td>
-                      <td className="px-3 py-2.5 text-xs text-muted-foreground hidden sm:table-cell whitespace-nowrap">{d.type.replace(/_/g, " ").toLowerCase()}</td>
-                      <td className="px-3 py-2.5 text-xs text-muted-foreground hidden md:table-cell tabular-nums">v{d.version}</td>
-                      <td className="px-3 py-2.5"><StatusBadge status={d.status} /></td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-1">
-                          <EditDeliverableDialog deliverable={{ id: d.id, title: d.title, description: d.description, type: d.type, content: d.content }} />
-                          {d.status === "DRAFT" && <SubmitDeliverableButton deliverableId={d.id} />}
-                          {d.status === "CHANGES_REQUESTED" && <ResubmitButton id={d.id} type="deliverable" />}
-                          {d.status === "APPROVED" && <MarkDeliveredButton deliverableId={d.id} />}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            ec.deliverables.map((d) => (
+              <Link
+                key={d.id}
+                href={`/admin/events/${eventId}/deliverables/${d.id}`}
+                className="flex items-center gap-2.5 rounded-md px-2 py-2 hover:bg-accent/50 transition-colors"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{d.title}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {d.type.replace(/_/g, " ").toLowerCase()} · v{d.version}
+                  </p>
+                </div>
+                <StatusBadge status={d.status} />
+              </Link>
+            ))
           )}
         </div>
       ))}
+
+      {event.companies.length === 0 && (
+        <EmptyState
+          icon={Package}
+          title="Aucune entreprise"
+          description="Ajoutez une entreprise a cet evenement."
+        />
+      )}
     </div>
   );
 }
