@@ -175,6 +175,15 @@ export async function updateStrategyItemStatus(
         where: { id: item.strategyId },
         data: { status: "CHANGES_REQUESTED" },
       });
+
+      await tx.activity.create({
+        data: {
+          type: "STRATEGY_REJECTED",
+          message: `requested changes on strategy "${item.strategy.title}"`,
+          userId: session.user.id,
+          strategyId: item.strategyId,
+        },
+      });
     }
   });
 
@@ -184,14 +193,14 @@ export async function updateStrategyItemStatus(
       await notifyAdmins(
         item.strategy.eventCompany.id,
         "Element approuve",
-        `"${item.title}" a ete approuve par le client.`,
+        `"${item.title}" (strategie "${item.strategy.title}") a ete approuve par le client.`,
         `/admin/events`,
       );
     } else if (parsed.data.status === "REJECTED") {
       await notifyAdmins(
         item.strategy.eventCompany.id,
-        "Element refuse",
-        `"${item.title}" a ete refuse par le client.`,
+        "Modifications demandees",
+        `"${item.title}" (strategie "${item.strategy.title}") a ete refuse par le client.`,
         `/admin/events`,
       );
     }
