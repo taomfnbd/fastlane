@@ -81,6 +81,19 @@ export default async function AdminDashboardPage() {
     }),
   ]);
 
+  const unansweredQuestions = await prisma.question.findMany({
+    where: { answeredAt: null },
+    include: {
+      author: { select: { name: true } },
+      targetCompany: { select: { name: true } },
+      strategy: { select: { id: true, title: true, eventCompany: { select: { eventId: true } } } },
+      deliverable: { select: { id: true, title: true, eventCompany: { select: { eventId: true } } } },
+      strategyItem: { select: { id: true, title: true } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+
   const delivProgress = totalDeliverables > 0 ? Math.round((approvedDeliverables / totalDeliverables) * 100) : 0;
   const stratProgress = totalStrategies > 0 ? Math.round((approvedStrategies / totalStrategies) * 100) : 0;
 
@@ -267,6 +280,40 @@ export default async function AdminDashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Unanswered questions */}
+        {unansweredQuestions.length > 0 && (
+          <div>
+            <h2 className="text-sm font-medium mb-3">Questions en attente ({unansweredQuestions.length})</h2>
+            <div className="space-y-2">
+              {unansweredQuestions.map((q) => {
+                const eventId = q.strategy?.eventCompany?.eventId ?? q.deliverable?.eventCompany?.eventId;
+                const link = q.strategy && eventId
+                  ? `/admin/events/${eventId}/strategy/${q.strategy.id}`
+                  : q.deliverable && eventId
+                    ? `/admin/events/${eventId}/deliverables/${q.deliverable.id}`
+                    : null;
+                return (
+                  <div key={q.id} className="rounded-md border p-3">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                      <span className="font-medium text-foreground">{q.targetCompany.name}</span>
+                      {q.strategy && <span>• {q.strategy.title}</span>}
+                      {q.deliverable && <span>• {q.deliverable.title}</span>}
+                      {q.strategyItem && <span>• {q.strategyItem.title}</span>}
+                    </div>
+                    <p className="text-sm line-clamp-2">{q.content}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[11px] text-muted-foreground">{relativeTime(q.createdAt)}</span>
+                      {link && (
+                        <Link href={link} className="text-xs text-primary hover:underline">Voir</Link>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Activity */}
         <div>
