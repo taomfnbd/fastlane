@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireClient, getSession, getUserWithRole, isAdmin } from "@/lib/auth-server";
-import { createStrategySchema, createStrategyItemSchema, updateStrategyItemStatusSchema } from "@/types";
+import { createStrategySchema, createStrategyItemSchema, updateStrategyItemStatusSchema, updateStrategySchema, updateStrategyItemSchema } from "@/types";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/types";
 import { notifyAdmins, notifyClientUsers } from "@/lib/notify";
@@ -218,6 +218,132 @@ export async function deleteStrategyItem(itemId: string): Promise<ActionResult> 
   await prisma.strategyItem.delete({ where: { id: itemId } });
 
   revalidatePath("/admin/events");
+  revalidatePath("/portal/strategy");
+  revalidatePath("/portal/dashboard");
+  return { success: true, data: undefined };
+}
+
+export async function updateStrategy(formData: FormData): Promise<ActionResult> {
+  const session = await requireAdmin();
+
+  const parsed = updateStrategySchema.safeParse({
+    id: formData.get("id"),
+    title: formData.get("title"),
+    description: formData.get("description") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const strategy = await prisma.strategy.findUnique({
+    where: { id: parsed.data.id },
+    select: { id: true },
+  });
+  if (!strategy) return { success: false, error: "Strategy not found" };
+
+  await prisma.strategy.update({
+    where: { id: parsed.data.id },
+    data: {
+      title: parsed.data.title,
+      description: parsed.data.description ?? null,
+    },
+  });
+
+  await prisma.activity.create({
+    data: {
+      type: "STRATEGY_UPDATED",
+      message: `updated strategy "${parsed.data.title}"`,
+      userId: session.user.id,
+      strategyId: parsed.data.id,
+    },
+  });
+
+  revalidatePath("/admin/events");
+  revalidatePath("/admin/strategies");
+  revalidatePath("/portal/strategy");
+  return { success: true, data: undefined };
+}
+
+export async function updateStrategyItem(formData: FormData): Promise<ActionResult> {
+  await requireAdmin();
+
+  const parsed = updateStrategyItemSchema.safeParse({
+    id: formData.get("id"),
+    title: formData.get("title"),
+    description: formData.get("description") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const item = await prisma.strategyItem.findUnique({
+    where: { id: parsed.data.id },
+    select: { id: true },
+  });
+  if (!item) return { success: false, error: "Item not found" };
+
+  await prisma.strategyItem.update({
+    where: { id: parsed.data.id },
+    data: {
+      title: parsed.data.title,
+      description: parsed.data.description ?? null,
+    },
+  });
+
+  revalidatePath("/admin/events");
+  revalidatePath("/admin/strategies");
+  revalidatePath("/portal/strategy");
+  return { success: true, data: undefined };
+}
+
+export async function resubmitStrategy(strategyId: string): Promise<ActionResult> {
+  const session = await requireAdmin();
+
+  const strategy = await prisma.strategy.findUnique({
+    where: { id: strategyId },
+    select: { id: true, title: true, status: true, version: true, eventCompanyId: true },
+  });
+
+  if (!strategy) return { success: false, error: "Strategy not found" };
+  if (strategy.status !== "CHANGES_REQUESTED") {
+    return { success: false, error: "Strategy must be in CHANGES_REQUESTED status to resubmit" };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.strategyItem.updateMany({
+      where: { strategyId },
+      data: { status: "PENDING" },
+    });
+
+    await tx.strategy.update({
+      where: { id: strategyId },
+      data: {
+        status: "PENDING_REVIEW",
+        version: { increment: 1 },
+      },
+    });
+  });
+
+  await prisma.activity.create({
+    data: {
+      type: "STRATEGY_SUBMITTED",
+      message: `resubmitted strategy "${strategy.title}" (v${strategy.version + 1})`,
+      userId: session.user.id,
+      strategyId,
+    },
+  });
+
+  await notifyClientUsers(
+    strategy.eventCompanyId,
+    "Strategie revisee",
+    `"${strategy.title}" a ete revisee et soumise a nouveau (v${strategy.version + 1}).`,
+    `/portal/strategy/${strategyId}`,
+  );
+
+  revalidatePath("/admin/events");
+  revalidatePath("/admin/strategies");
   revalidatePath("/portal/strategy");
   revalidatePath("/portal/dashboard");
   return { success: true, data: undefined };
