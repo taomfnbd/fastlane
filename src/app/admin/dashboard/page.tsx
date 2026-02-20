@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ProgressBar } from "@/components/shared/progress-bar";
-import { Calendar, Building2, Package, Target } from "lucide-react";
+import { Calendar, Building2, Package, Target, MessageCircleQuestion } from "lucide-react";
 import { cn, relativeTime } from "@/lib/utils";
 import Link from "next/link";
 
@@ -24,6 +24,7 @@ export default async function AdminDashboardPage() {
     activeEvents,
     actionItems,
     recentActivities,
+    unansweredQuestions,
   ] = await Promise.all([
     prisma.event.count({ where: { status: "ACTIVE" } }),
     prisma.company.count(),
@@ -75,24 +76,23 @@ export default async function AdminDashboardPage() {
       }),
     ]),
     prisma.activity.findMany({
-      take: 10,
+      take: 5,
       orderBy: { createdAt: "desc" },
       include: { user: { select: { name: true } } },
     }),
+    prisma.question.findMany({
+      where: { answeredAt: null },
+      include: {
+        author: { select: { name: true } },
+        targetCompany: { select: { name: true } },
+        strategy: { select: { id: true, title: true, eventCompany: { select: { eventId: true } } } },
+        deliverable: { select: { id: true, title: true, eventCompany: { select: { eventId: true } } } },
+        strategyItem: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
   ]);
-
-  const unansweredQuestions = await prisma.question.findMany({
-    where: { answeredAt: null },
-    include: {
-      author: { select: { name: true } },
-      targetCompany: { select: { name: true } },
-      strategy: { select: { id: true, title: true, eventCompany: { select: { eventId: true } } } },
-      deliverable: { select: { id: true, title: true, eventCompany: { select: { eventId: true } } } },
-      strategyItem: { select: { id: true, title: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-  });
 
   const delivProgress = totalDeliverables > 0 ? Math.round((approvedDeliverables / totalDeliverables) * 100) : 0;
   const stratProgress = totalStrategies > 0 ? Math.round((approvedStrategies / totalStrategies) * 100) : 0;
@@ -102,6 +102,7 @@ export default async function AdminDashboardPage() {
       label: "Evenements actifs",
       value: activeEventsCount,
       icon: Calendar,
+      href: "/admin/events",
       progress: undefined as number | undefined,
       subText: undefined as string | undefined,
     },
@@ -109,6 +110,7 @@ export default async function AdminDashboardPage() {
       label: "Entreprises",
       value: totalCompanies,
       icon: Building2,
+      href: "/admin/companies",
       progress: undefined as number | undefined,
       subText: undefined as string | undefined,
     },
@@ -116,6 +118,7 @@ export default async function AdminDashboardPage() {
       label: "Livrables en attente",
       value: pendingDeliverables,
       icon: Package,
+      href: "/admin/deliverables?status=pending",
       progress: delivProgress,
       subText: `${approvedDeliverables}/${totalDeliverables} approuves`,
     },
@@ -123,6 +126,7 @@ export default async function AdminDashboardPage() {
       label: "Strategies en attente",
       value: pendingStrategies,
       icon: Target,
+      href: "/admin/strategies?status=pending",
       progress: stratProgress,
       subText: `${approvedStrategies}/${totalStrategies} approuvees`,
     },
@@ -160,10 +164,14 @@ export default async function AdminDashboardPage() {
     <div className="space-y-6">
       <PageHeader title="Tableau de bord" />
 
-      {/* Stats */}
+      {/* Stats - clickable cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="rounded-lg border bg-background p-4 space-y-3">
+          <Link
+            key={stat.label}
+            href={stat.href}
+            className="rounded-lg border bg-background p-4 space-y-3 hover:bg-accent/30 transition-colors cursor-pointer"
+          >
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <stat.icon className="h-3.5 w-3.5" />
               {stat.label}
@@ -175,8 +183,100 @@ export default async function AdminDashboardPage() {
                 <p className="text-[11px] text-muted-foreground">{stat.subText}</p>
               </div>
             )}
-          </div>
+          </Link>
         ))}
+      </div>
+
+      {/* A traiter + Questions en attente */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* A traiter - 2/3 width */}
+        <div className="lg:col-span-2">
+          <h2 className="text-sm font-medium mb-3">A traiter</h2>
+          {allActionItems.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-8 text-center rounded-md border">
+              Aucun element en attente
+            </p>
+          ) : (
+            <div className="rounded-md border divide-y">
+              {allActionItems.map((item) => (
+                <Link
+                  key={`${item.kind}-${item.id}`}
+                  href={
+                    item.kind === "strategy"
+                      ? `/admin/events/${item.eventId}/strategy?company=${item.companyId}`
+                      : `/admin/events/${item.eventId}/deliverables?company=${item.companyId}`
+                  }
+                  className="flex items-start gap-3 px-3 py-2.5 hover:bg-accent/50 transition-colors"
+                >
+                  <div
+                    className={cn(
+                      "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+                      item.status === "CHANGES_REQUESTED" ? "bg-red-500" : "bg-amber-500"
+                    )}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-medium truncate">{item.title}</p>
+                      <span className="shrink-0 text-[10px] text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">
+                        {item.kind === "strategy" ? "strategie" : "livrable"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {item.company} · {item.event}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <StatusBadge status={item.status} />
+                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                      {relativeTime(item.updatedAt)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Questions en attente - 1/3 width */}
+        <div>
+          <h2 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <MessageCircleQuestion className="h-3.5 w-3.5 text-muted-foreground" />
+            Questions en attente ({unansweredQuestions.length})
+          </h2>
+          {unansweredQuestions.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-8 text-center rounded-md border">
+              Aucune question en attente
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {unansweredQuestions.map((q) => {
+                const eventId = q.strategy?.eventCompany?.eventId ?? q.deliverable?.eventCompany?.eventId;
+                const link = q.strategy && eventId
+                  ? `/admin/events/${eventId}/strategy/${q.strategy.id}`
+                  : q.deliverable && eventId
+                    ? `/admin/events/${eventId}/deliverables/${q.deliverable.id}`
+                    : null;
+                return (
+                  <div key={q.id} className="rounded-md border p-3">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                      <span className="font-medium text-foreground">{q.targetCompany.name}</span>
+                      {q.strategy && <span>· {q.strategy.title}</span>}
+                      {q.deliverable && <span>· {q.deliverable.title}</span>}
+                      {q.strategyItem && <span>· {q.strategyItem.title}</span>}
+                    </div>
+                    <p className="text-sm line-clamp-2">{q.content}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[11px] text-muted-foreground">{relativeTime(q.createdAt)}</span>
+                      {link && (
+                        <Link href={link} className="text-xs text-primary hover:underline">Voir</Link>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Event progression */}
@@ -236,116 +336,36 @@ export default async function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Action items + Activity */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Action items */}
-        <div>
-          <h2 className="text-sm font-medium mb-3">En attente d&apos;action</h2>
-          {allActionItems.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-8 text-center">
-              Aucun element en attente
-            </p>
-          ) : (
-            <div className="rounded-md border divide-y">
-              {allActionItems.map((item) => (
-                <Link
-                  key={`${item.kind}-${item.id}`}
-                  href={
-                    item.kind === "strategy"
-                      ? `/admin/events/${item.eventId}/strategy?company=${item.companyId}`
-                      : `/admin/events/${item.eventId}/deliverables?company=${item.companyId}`
-                  }
-                  className="flex items-start gap-3 px-3 py-2.5 hover:bg-accent/50 transition-colors"
-                >
-                  <div
-                    className={cn(
-                      "mt-1.5 h-2 w-2 shrink-0 rounded-full",
-                      item.status === "CHANGES_REQUESTED" ? "bg-red-500" : "bg-amber-500"
-                    )}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium truncate">{item.title}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {item.company} · {item.event}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <StatusBadge status={item.status} />
-                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                      {relativeTime(item.updatedAt)}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Unanswered questions */}
-        {unansweredQuestions.length > 0 && (
-          <div>
-            <h2 className="text-sm font-medium mb-3">Questions en attente ({unansweredQuestions.length})</h2>
-            <div className="space-y-2">
-              {unansweredQuestions.map((q) => {
-                const eventId = q.strategy?.eventCompany?.eventId ?? q.deliverable?.eventCompany?.eventId;
-                const link = q.strategy && eventId
-                  ? `/admin/events/${eventId}/strategy/${q.strategy.id}`
-                  : q.deliverable && eventId
-                    ? `/admin/events/${eventId}/deliverables/${q.deliverable.id}`
-                    : null;
-                return (
-                  <div key={q.id} className="rounded-md border p-3">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                      <span className="font-medium text-foreground">{q.targetCompany.name}</span>
-                      {q.strategy && <span>• {q.strategy.title}</span>}
-                      {q.deliverable && <span>• {q.deliverable.title}</span>}
-                      {q.strategyItem && <span>• {q.strategyItem.title}</span>}
-                    </div>
-                    <p className="text-sm line-clamp-2">{q.content}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-[11px] text-muted-foreground">{relativeTime(q.createdAt)}</span>
-                      {link && (
-                        <Link href={link} className="text-xs text-primary hover:underline">Voir</Link>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+      {/* Activite recente */}
+      <div>
+        <h2 className="text-sm font-medium mb-3">Activite recente</h2>
+        {recentActivities.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-8 text-center">Aucune activite</p>
+        ) : (
+          <div className="space-y-0">
+            {recentActivities.map((activity) => (
+              <div key={activity.id} className="flex items-start gap-2.5 py-2 text-sm">
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium mt-0.5">
+                  {activity.user.name.charAt(0)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs">
+                    <span className="font-medium">{activity.user.name}</span>{" "}
+                    <span className="text-muted-foreground">{activity.message}</span>
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/60">
+                    {new Date(activity.createdAt).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
-
-        {/* Activity */}
-        <div>
-          <h2 className="text-sm font-medium mb-3">Activite</h2>
-          {recentActivities.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-8 text-center">Aucune activite</p>
-          ) : (
-            <div className="space-y-0">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-2.5 py-2 text-sm">
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium mt-0.5">
-                    {activity.user.name.charAt(0)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs">
-                      <span className="font-medium">{activity.user.name}</span>{" "}
-                      <span className="text-muted-foreground">{activity.message}</span>
-                    </p>
-                    <p className="text-[11px] text-muted-foreground/60">
-                      {new Date(activity.createdAt).toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
