@@ -9,6 +9,9 @@ import { Package, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { CreateDeliverableDialog } from "@/components/admin/create-deliverable-dialog";
 import { SubmitDeliverableButton } from "@/components/admin/submit-deliverable-button";
+import { EditDeliverableDialog } from "@/components/admin/edit-deliverable-dialog";
+import { ResubmitButton } from "@/components/admin/resubmit-button";
+import { MarkDeliveredButton } from "@/components/admin/mark-delivered-button";
 
 export const metadata = { title: "Gestion des livrables" };
 
@@ -57,7 +60,14 @@ export default async function EventDeliverablesPage({ params, searchParams }: { 
                       <td className="px-3 py-2.5 text-xs text-muted-foreground hidden sm:table-cell whitespace-nowrap">{d.type.replace(/_/g, " ").toLowerCase()}</td>
                       <td className="px-3 py-2.5 text-xs text-muted-foreground hidden md:table-cell tabular-nums">v{d.version}</td>
                       <td className="px-3 py-2.5"><StatusBadge status={d.status} /></td>
-                      <td className="px-3 py-2.5">{d.status === "DRAFT" && <SubmitDeliverableButton deliverableId={d.id} />}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-1">
+                          <EditDeliverableDialog deliverable={{ id: d.id, title: d.title, description: d.description, type: d.type, content: d.content }} />
+                          {d.status === "DRAFT" && <SubmitDeliverableButton deliverableId={d.id} />}
+                          {d.status === "CHANGES_REQUESTED" && <ResubmitButton id={d.id} type="deliverable" />}
+                          {d.status === "APPROVED" && <MarkDeliveredButton deliverableId={d.id} />}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

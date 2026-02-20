@@ -10,6 +10,9 @@ import Link from "next/link";
 import { CreateStrategyDialog } from "@/components/admin/create-strategy-dialog";
 import { SubmitStrategyButton } from "@/components/admin/submit-strategy-button";
 import { AddStrategyItemDialog } from "@/components/admin/add-strategy-item-dialog";
+import { EditStrategyDialog } from "@/components/admin/edit-strategy-dialog";
+import { EditStrategyItemDialog } from "@/components/admin/edit-strategy-item-dialog";
+import { ResubmitButton } from "@/components/admin/resubmit-button";
 
 export const metadata = { title: "Gestion des strategies" };
 
@@ -46,7 +49,9 @@ export default async function EventStrategyPage({ params, searchParams }: { para
                   </div>
                   <div className="flex items-center gap-2 shrink-0 ml-3">
                     <StatusBadge status={strategy.status} />
+                    <EditStrategyDialog strategy={{ id: strategy.id, title: strategy.title, description: strategy.description }} />
                     {strategy.status === "DRAFT" && <SubmitStrategyButton strategyId={strategy.id} />}
+                    {strategy.status === "CHANGES_REQUESTED" && <ResubmitButton id={strategy.id} type="strategy" />}
                   </div>
                 </div>
                 <div className="divide-y">
@@ -56,7 +61,10 @@ export default async function EventStrategyPage({ params, searchParams }: { para
                         <p className="text-sm"><span className="text-muted-foreground tabular-nums">{index + 1}.</span> {item.title}</p>
                         {item.description && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5 pl-5">{item.description}</p>}
                       </div>
-                      <StatusBadge status={item.status} className="shrink-0 ml-3" />
+                      <div className="flex items-center gap-1.5 shrink-0 ml-3">
+                        <StatusBadge status={item.status} />
+                        <EditStrategyItemDialog item={{ id: item.id, title: item.title, description: item.description }} />
+                      </div>
                     </div>
                   ))}
                 </div>
