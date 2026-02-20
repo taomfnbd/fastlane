@@ -44,7 +44,7 @@ export default async function EventStrategyPage({ params, searchParams }: { para
               <div key={strategy.id} className="rounded-md border">
                 <div className="flex items-center justify-between px-3 py-2.5 border-b">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">{strategy.title}</p>
+                    <Link href={`/admin/events/${eventId}/strategy/${strategy.id}`} className="text-sm font-medium hover:underline">{strategy.title}</Link>
                     {strategy.description && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{strategy.description}</p>}
                   </div>
                   <div className="flex items-center gap-2 shrink-0 ml-3">

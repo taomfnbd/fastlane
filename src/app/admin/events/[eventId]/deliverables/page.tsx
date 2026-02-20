@@ -54,7 +54,7 @@ export default async function EventDeliverablesPage({ params, searchParams }: { 
                   {ec.deliverables.map((d) => (
                     <tr key={d.id} className="hover:bg-accent/50 transition-colors">
                       <td className="px-3 py-2.5">
-                        <p className="font-medium">{d.title}</p>
+                        <Link href={`/admin/events/${eventId}/deliverables/${d.id}`} className="font-medium hover:underline">{d.title}</Link>
                         {d.description && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{d.description}</p>}
                       </td>
                       <td className="px-3 py-2.5 text-xs text-muted-foreground hidden sm:table-cell whitespace-nowrap">{d.type.replace(/_/g, " ").toLowerCase()}</td>
