@@ -67,6 +67,13 @@ export async function updateEvent(formData: FormData): Promise<ActionResult> {
 
   const { id, name, description, startDate, endDate, status } = parsed.data;
 
+  if (new Date(endDate) <= new Date(startDate)) {
+    return { success: false, error: "End date must be after start date" };
+  }
+
+  const existing = await prisma.event.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) return { success: false, error: "Event not found" };
+
   await prisma.event.update({
     where: { id },
     data: {
@@ -88,7 +95,11 @@ export async function updateEvent(formData: FormData): Promise<ActionResult> {
 export async function deleteEvent(eventId: string): Promise<ActionResult> {
   await requireAdmin();
 
-  await prisma.event.delete({ where: { id: eventId } });
+  try {
+    await prisma.event.delete({ where: { id: eventId } });
+  } catch {
+    return { success: false, error: "Impossible de supprimer cet evenement" };
+  }
 
   revalidatePath("/admin/events");
   revalidatePath("/admin/dashboard");
@@ -125,9 +136,13 @@ export async function removeCompanyFromEvent(
 ): Promise<ActionResult> {
   await requireAdmin();
 
-  await prisma.eventCompany.delete({
-    where: { eventId_companyId: { eventId, companyId } },
-  });
+  try {
+    await prisma.eventCompany.delete({
+      where: { eventId_companyId: { eventId, companyId } },
+    });
+  } catch {
+    return { success: false, error: "Association introuvable" };
+  }
 
   revalidatePath(`/admin/events/${eventId}`);
 

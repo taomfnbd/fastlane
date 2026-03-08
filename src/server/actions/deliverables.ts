@@ -94,8 +94,8 @@ export async function approveDeliverable(deliverableId: string): Promise<ActionR
 
   if (!deliverable) return { success: false, error: "Not found" };
 
-  // Only allow approval from valid review states
-  if (deliverable.status !== "IN_REVIEW" && deliverable.status !== "CHANGES_REQUESTED") {
+  // Only allow approval from IN_REVIEW (must resubmit from CHANGES_REQUESTED first)
+  if (deliverable.status !== "IN_REVIEW") {
     return { success: false, error: "Le livrable doit etre en revision pour etre approuve" };
   }
 
@@ -222,7 +222,7 @@ export async function updateDeliverable(formData: FormData): Promise<ActionResul
 
   await prisma.activity.create({
     data: {
-      type: "DELIVERABLE_SUBMITTED",
+      type: "STATUS_CHANGED",
       message: `updated deliverable "${parsed.data.title}"`,
       userId: session.user.id,
       deliverableId: parsed.data.id,
@@ -317,5 +317,27 @@ export async function markDeliverableDelivered(deliverableId: string): Promise<A
   revalidatePath("/admin/deliverables");
   revalidatePath("/portal/deliverables");
   revalidatePath("/portal/dashboard");
+  return { success: true, data: undefined };
+}
+
+export async function deleteDeliverable(deliverableId: string): Promise<ActionResult> {
+  await requireAdmin();
+
+  const deliverable = await prisma.deliverable.findUnique({
+    where: { id: deliverableId },
+    select: { id: true, status: true },
+  });
+
+  if (!deliverable) return { success: false, error: "Livrable introuvable" };
+  if (deliverable.status !== "DRAFT") {
+    return { success: false, error: "Seuls les livrables en brouillon peuvent etre supprimes" };
+  }
+
+  await prisma.deliverable.delete({ where: { id: deliverableId } });
+
+  revalidatePath("/admin/events");
+  revalidatePath("/admin/deliverables");
+  revalidatePath("/portal/deliverables");
+  revalidatePath("/admin/dashboard");
   return { success: true, data: undefined };
 }

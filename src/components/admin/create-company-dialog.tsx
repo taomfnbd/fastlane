@@ -40,7 +40,7 @@ export function CreateCompanyDialog() {
         <Button><Plus className="mr-2 h-4 w-4" />Nouvelle entreprise</Button>
       </DialogTrigger>
       <DialogContent>
-        <form onSubmit={handleSubmit}>
+        <form key={String(open)} onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Ajouter une entreprise</DialogTitle>
             <DialogDescription>Ajouter une nouvelle entreprise cliente.</DialogDescription>

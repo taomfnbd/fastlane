@@ -13,6 +13,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeft,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ const mainNav = [
   { label: "Strategies", href: "/admin/strategies", icon: Target, countKey: "pendingStrategies" as const },
   { label: "Livrables", href: "/admin/deliverables", icon: Package, countKey: "pendingDeliverables" as const },
   { label: "Entreprises", href: "/admin/companies", icon: Building2 },
+  { label: "Activite", href: "/admin/activity", icon: History },
 ];
 
 const workspaceNav = [

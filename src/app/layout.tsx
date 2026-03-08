@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -28,12 +29,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className="dark">
+    <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.variable} ${mono.variable} font-sans antialiased`}>
-        <TooltipProvider>
-          {children}
-          <Toaster position="bottom-right" />
-        </TooltipProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <TooltipProvider>
+            {children}
+            <Toaster position="bottom-right" />
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

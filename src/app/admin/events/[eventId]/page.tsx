@@ -10,7 +10,10 @@ import { Calendar, Target, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { EventStatusSelect } from "@/components/admin/event-status-select";
+import { EditEventDialog } from "@/components/admin/edit-event-dialog";
+import { EventDeleteButton } from "@/components/admin/event-delete-button";
 import { AddCompanyToEvent } from "@/components/admin/add-company-to-event";
+import { RemoveCompanyButton } from "@/components/admin/remove-company-button";
 
 export async function generateMetadata({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = await params;
@@ -41,7 +44,17 @@ export default async function EventDetailPage({ params }: { params: Promise<{ ev
     <div className="space-y-6">
       <div>
         <Breadcrumbs items={[{ label: "Dashboard", href: "/admin/dashboard" }, { label: "Evenements", href: "/admin/events" }, { label: event.name }]} />
-        <PageHeader title={event.name} description={event.description ?? undefined} action={<EventStatusSelect eventId={event.id} currentStatus={event.status} />} />
+        <PageHeader
+          title={event.name}
+          description={event.description ?? undefined}
+          action={
+            <div className="flex items-center gap-2">
+              <EditEventDialog event={{ id: event.id, name: event.name, description: event.description, startDate: event.startDate, endDate: event.endDate }} />
+              <EventStatusSelect eventId={event.id} currentStatus={event.status} />
+              <EventDeleteButton eventId={event.id} hasActiveItems={totalItems > 0} />
+            </div>
+          }
+        />
       </div>
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
@@ -97,6 +110,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ ev
                     <div className="flex items-center gap-3">
                       <Link href={`/admin/companies/${ec.companyId}`} className="text-sm font-medium hover:underline">{ec.company.name}</Link>
                       <StatusBadge status={ec.company.plan} />
+                      <RemoveCompanyButton eventId={event.id} companyId={ec.companyId} companyName={ec.company.name} hasItems={stratCount + delivCount > 0} />
                     </div>
                     <span className={cn(
                       "text-xs font-medium tabular-nums",

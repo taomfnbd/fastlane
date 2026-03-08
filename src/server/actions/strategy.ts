@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, requireClient, getSession, getUserWithRole, isAdmin } from "@/lib/auth-server";
+import { requireAdmin, getSession, getUserWithRole, isAdmin } from "@/lib/auth-server";
 import { createStrategySchema, createStrategyItemSchema, updateStrategyItemStatusSchema, updateStrategySchema, updateStrategyItemSchema } from "@/types";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/types";
@@ -141,6 +141,11 @@ export async function updateStrategyItemStatus(
 
   if (!item) return { success: false, error: "Item not found" };
 
+  // Only allow status changes when the strategy is under review
+  if (item.strategy.status !== "PENDING_REVIEW" && item.strategy.status !== "REVISED") {
+    return { success: false, error: "La strategie doit etre en revision pour modifier le statut des elements" };
+  }
+
   // Verify access
   const user = await getUserWithRole(session.user.id);
   if (!user) return { success: false, error: "User not found" };
@@ -150,7 +155,7 @@ export async function updateStrategyItemStatus(
   }
 
   // Transaction returns the final status so notifications are based on committed state
-  const result = await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     await tx.strategyItem.update({
       where: { id: parsed.data.id },
       data: { status: parsed.data.status },
@@ -223,7 +228,11 @@ export async function updateStrategyItemStatus(
 export async function deleteStrategyItem(itemId: string): Promise<ActionResult> {
   await requireAdmin();
 
-  await prisma.strategyItem.delete({ where: { id: itemId } });
+  try {
+    await prisma.strategyItem.delete({ where: { id: itemId } });
+  } catch {
+    return { success: false, error: "Element introuvable" };
+  }
 
   revalidatePath("/admin/events");
   revalidatePath("/portal/strategy");
@@ -353,6 +362,167 @@ export async function resubmitStrategy(strategyId: string): Promise<ActionResult
   revalidatePath("/admin/events");
   revalidatePath("/admin/strategies");
   revalidatePath("/portal/strategy");
+  revalidatePath("/portal/dashboard");
+  return { success: true, data: undefined };
+}
+
+export async function deleteStrategy(strategyId: string): Promise<ActionResult> {
+  await requireAdmin();
+
+  const strategy = await prisma.strategy.findUnique({
+    where: { id: strategyId },
+    select: { id: true, status: true },
+  });
+
+  if (!strategy) return { success: false, error: "Strategie introuvable" };
+  if (strategy.status !== "DRAFT") {
+    return { success: false, error: "Seules les strategies en brouillon peuvent etre supprimees" };
+  }
+
+  await prisma.strategy.delete({ where: { id: strategyId } });
+
+  revalidatePath("/admin/events");
+  revalidatePath("/admin/strategies");
+  revalidatePath("/portal/strategy");
+  revalidatePath("/admin/dashboard");
+  return { success: true, data: undefined };
+}
+
+export async function approveAllStrategyItems(strategyId: string): Promise<ActionResult> {
+  const session = await getSession();
+  if (!session) return { success: false, error: "Not authenticated" };
+
+  const strategy = await prisma.strategy.findUnique({
+    where: { id: strategyId },
+    include: {
+      eventCompany: { select: { companyId: true, id: true } },
+      items: { select: { id: true, status: true } },
+    },
+  });
+
+  if (!strategy) return { success: false, error: "Strategie introuvable" };
+
+  if (strategy.status !== "PENDING_REVIEW" && strategy.status !== "REVISED") {
+    return { success: false, error: "La strategie doit etre en revision pour etre validee" };
+  }
+
+  const user = await getUserWithRole(session.user.id);
+  if (!user) return { success: false, error: "Utilisateur introuvable" };
+
+  if (!isAdmin(user.role) && user.companyId !== strategy.eventCompany.companyId) {
+    return { success: false, error: "Acces refuse" };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.strategyItem.updateMany({
+      where: { strategyId, status: { not: "APPROVED" } },
+      data: { status: "APPROVED" },
+    });
+
+    await tx.strategy.update({
+      where: { id: strategyId },
+      data: { status: "APPROVED" },
+    });
+
+    await tx.activity.create({
+      data: {
+        type: "STRATEGY_APPROVED",
+        message: `approved strategy "${strategy.title}"`,
+        userId: session.user.id,
+        strategyId,
+      },
+    });
+  });
+
+  if (!isAdmin(user.role)) {
+    await notifyAdmins(
+      strategy.eventCompany.id,
+      "Strategie approuvee",
+      `"${strategy.title}" a ete entierement approuvee par le client.`,
+      `/admin/events`,
+    );
+  }
+
+  revalidatePath("/admin/events");
+  revalidatePath("/portal/strategy");
+  revalidatePath(`/portal/strategy/${strategyId}`);
+  revalidatePath("/portal/dashboard");
+  return { success: true, data: undefined };
+}
+
+export async function rejectStrategy(
+  strategyId: string,
+  reason: string,
+): Promise<ActionResult> {
+  const session = await getSession();
+  if (!session) return { success: false, error: "Not authenticated" };
+
+  if (!reason.trim()) {
+    return { success: false, error: "Une raison est requise" };
+  }
+
+  const strategy = await prisma.strategy.findUnique({
+    where: { id: strategyId },
+    include: {
+      eventCompany: { select: { companyId: true, id: true } },
+      items: { select: { id: true, status: true } },
+    },
+  });
+
+  if (!strategy) return { success: false, error: "Strategie introuvable" };
+
+  if (strategy.status !== "PENDING_REVIEW" && strategy.status !== "REVISED") {
+    return { success: false, error: "La strategie doit etre en revision pour etre refusee" };
+  }
+
+  const user = await getUserWithRole(session.user.id);
+  if (!user) return { success: false, error: "Utilisateur introuvable" };
+
+  if (!isAdmin(user.role) && user.companyId !== strategy.eventCompany.companyId) {
+    return { success: false, error: "Acces refuse" };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.strategyItem.updateMany({
+      where: { strategyId, status: { not: "APPROVED" } },
+      data: { status: "REJECTED" },
+    });
+
+    await tx.strategy.update({
+      where: { id: strategyId },
+      data: { status: "CHANGES_REQUESTED" },
+    });
+
+    await tx.comment.create({
+      data: {
+        content: reason.trim(),
+        authorId: session.user.id,
+        strategyId,
+      },
+    });
+
+    await tx.activity.create({
+      data: {
+        type: "STRATEGY_REJECTED",
+        message: `requested changes on strategy "${strategy.title}"`,
+        userId: session.user.id,
+        strategyId,
+      },
+    });
+  });
+
+  if (!isAdmin(user.role)) {
+    await notifyAdmins(
+      strategy.eventCompany.id,
+      "Modifications demandees",
+      `"${strategy.title}" a ete refusee par le client.`,
+      `/admin/events`,
+    );
+  }
+
+  revalidatePath("/admin/events");
+  revalidatePath("/portal/strategy");
+  revalidatePath(`/portal/strategy/${strategyId}`);
   revalidatePath("/portal/dashboard");
   return { success: true, data: undefined };
 }

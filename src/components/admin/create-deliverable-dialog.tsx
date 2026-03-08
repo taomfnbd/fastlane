@@ -58,7 +58,7 @@ export function CreateDeliverableDialog({ eventCompanyId, companyName }: CreateD
         <Button size="sm"><Plus className="mr-1 h-3 w-3" />Nouveau livrable</Button>
       </DialogTrigger>
       <DialogContent>
-        <form onSubmit={handleSubmit}>
+        <form key={String(open)} onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Creer un livrable</DialogTitle>
             <DialogDescription>Nouveau livrable pour {companyName}</DialogDescription>

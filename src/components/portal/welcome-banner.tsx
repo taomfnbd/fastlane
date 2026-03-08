@@ -1,25 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const STORAGE_KEY = "fastlane-welcome-dismissed";
 
+function getSnapshot() {
+  return localStorage.getItem(STORAGE_KEY) === null;
+}
+
+function getServerSnapshot() {
+  return false;
+}
+
+function subscribe(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
 export function WelcomeBanner() {
-  const [visible, setVisible] = useState(false);
+  const shouldShow = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [dismissed, setDismissed] = useState(false);
 
-  useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      setVisible(true);
-    }
-  }, []);
-
-  if (!visible) return null;
+  if (!shouldShow || dismissed) return null;
 
   function dismiss() {
     localStorage.setItem(STORAGE_KEY, "1");
-    setVisible(false);
+    setDismissed(true);
   }
 
   return (

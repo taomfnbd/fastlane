@@ -40,13 +40,13 @@ export function CommentSection({
   const [content, setContent] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
 
   async function handleSubmit() {
     if (!content.trim()) return;
-    setLoading(true);
+    setLoadingAction("submit");
 
     const formData = new FormData();
     formData.set("content", content);
@@ -61,12 +61,12 @@ export function CommentSection({
       toast.error(result.error);
     }
 
-    setLoading(false);
+    setLoadingAction(null);
   }
 
   async function handleReply(parentId: string) {
     if (!replyContent.trim()) return;
-    setLoading(true);
+    setLoadingAction(`reply-${parentId}`);
 
     const formData = new FormData();
     formData.set("content", replyContent);
@@ -83,20 +83,20 @@ export function CommentSection({
       toast.error(result.error);
     }
 
-    setLoading(false);
+    setLoadingAction(null);
   }
 
   async function handleDelete(commentId: string) {
     if (!confirm("Supprimer ce commentaire ?")) return;
-    setLoading(true);
+    setLoadingAction(`delete-${commentId}`);
     const result = await deleteComment(commentId);
     if (!result.success) toast.error(result.error);
-    setLoading(false);
+    setLoadingAction(null);
   }
 
   async function handleEdit(commentId: string) {
     if (!editContent.trim()) return;
-    setLoading(true);
+    setLoadingAction(`edit-${commentId}`);
     const result = await updateComment(commentId, editContent);
     if (result.success) {
       setEditingId(null);
@@ -104,7 +104,7 @@ export function CommentSection({
     } else {
       toast.error(result.error);
     }
-    setLoading(false);
+    setLoadingAction(null);
   }
 
   function isOwner(authorId?: string) {
@@ -171,7 +171,7 @@ export function CommentSection({
                     }}
                   />
                   <div className="flex gap-1">
-                    <Button size="sm" className="h-6 text-xs px-2" onClick={() => handleEdit(comment.id)} disabled={loading || !editContent.trim()}>
+                    <Button size="sm" className="h-6 text-xs px-2" onClick={() => handleEdit(comment.id)} disabled={loadingAction === `edit-${comment.id}` || !editContent.trim()}>
                       <Check className="h-3 w-3 mr-1" /> Sauver
                     </Button>
                     <Button size="sm" variant="ghost" className="h-6 text-xs px-2" onClick={() => { setEditingId(null); setEditContent(""); }}>
@@ -185,6 +185,7 @@ export function CommentSection({
 
               {editingId !== comment.id && (
                 <button
+                  type="button"
                   className="text-[11px] text-muted-foreground hover:text-foreground transition-colors mt-1 inline-flex items-center gap-1"
                   onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
                 >
@@ -243,16 +244,16 @@ export function CommentSection({
                 }}
                 rows={1}
                 className="text-xs min-h-8"
-                disabled={loading}
+                disabled={loadingAction === `reply-${comment.id}`}
               />
               <div className="flex flex-col gap-1">
                 <Button
                   size="sm"
                   className="h-7 text-xs"
                   onClick={() => handleReply(comment.id)}
-                  disabled={loading || !replyContent.trim()}
+                  disabled={loadingAction === `reply-${comment.id}` || !replyContent.trim()}
                 >
-                  {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Repondre"}
+                  {loadingAction === `reply-${comment.id}` ? <Loader2 className="h-3 w-3 animate-spin" /> : "Repondre"}
                 </Button>
                 <Button
                   size="sm"
@@ -282,15 +283,15 @@ export function CommentSection({
           }}
           rows={1}
           className="text-xs min-h-8"
-          disabled={loading}
+          disabled={loadingAction === "submit"}
         />
         <Button
           size="sm"
           className="h-8 text-xs shrink-0"
           onClick={handleSubmit}
-          disabled={loading || !content.trim()}
+          disabled={loadingAction === "submit" || !content.trim()}
         >
-          {loading && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+          {loadingAction === "submit" && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
           Publier
         </Button>
       </div>

@@ -4,19 +4,42 @@ import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Users } from "lucide-react";
 import { InviteUserDialog } from "@/components/admin/invite-user-dialog";
+import { UserActions } from "@/components/admin/user-actions";
+import { Pagination } from "@/components/shared/pagination";
+import { SearchInput } from "@/components/shared/search-input";
 
 export const metadata = { title: "Utilisateurs" };
 
 const roleDot: Record<string, string> = { SUPER_ADMIN: "bg-purple-500", ADMIN: "bg-blue-500", CLIENT_ADMIN: "bg-emerald-500", CLIENT_MEMBER: "bg-muted-foreground/50" };
 const roleLabel: Record<string, string> = { SUPER_ADMIN: "super admin", ADMIN: "admin", CLIENT_ADMIN: "admin client", CLIENT_MEMBER: "membre client" };
 
-export default async function UsersPage() {
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; q?: string }>;
+}) {
   await requireAdmin();
-  const users = await prisma.user.findMany({ orderBy: { createdAt: "desc" }, include: { company: { select: { name: true } } } });
+  const { page = "1", q } = await searchParams;
+  const currentPage = Math.max(1, Number(page));
+  const perPage = 10;
+  const where = q ? { OR: [{ name: { contains: q, mode: "insensitive" as const } }, { email: { contains: q, mode: "insensitive" as const } }] } : {};
+
+  const [users, companies, totalCount] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (currentPage - 1) * perPage,
+      take: perPage,
+      include: { company: { select: { name: true } } },
+    }),
+    prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.user.count({ where }),
+  ]);
 
   return (
     <div className="space-y-4">
       <PageHeader title="Utilisateurs" action={<InviteUserDialog />} />
+      <SearchInput basePath="/admin/users" placeholder="Rechercher un utilisateur..." />
       {users.length === 0 ? (
         <EmptyState icon={Users} title="Aucun utilisateur" description="Invitez des utilisateurs." action={<InviteUserDialog />} />
       ) : (
@@ -28,6 +51,8 @@ export default async function UsersPage() {
                 <th className="text-left font-medium px-3 py-2 hidden sm:table-cell">Email</th>
                 <th className="text-left font-medium px-3 py-2 hidden md:table-cell">Entreprise</th>
                 <th className="text-left font-medium px-3 py-2">Role</th>
+                <th className="text-left font-medium px-3 py-2 hidden lg:table-cell">Cree le</th>
+                <th className="w-10" />
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -47,12 +72,24 @@ export default async function UsersPage() {
                       {roleLabel[user.role] ?? user.role.toLowerCase()}
                     </span>
                   </td>
+                  <td className="px-3 py-2.5 text-[11px] text-muted-foreground hidden lg:table-cell">
+                    {new Date(user.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <UserActions
+                      userId={user.id}
+                      currentRole={user.role}
+                      currentCompanyId={user.companyId}
+                      companies={companies}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+      <Pagination total={totalCount} perPage={perPage} basePath="/admin/users" />
     </div>
   );
 }

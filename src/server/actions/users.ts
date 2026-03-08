@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { auth } from "@/lib/auth";
+import { z } from "zod";
 import { inviteUserSchema } from "@/types";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/types";
@@ -62,19 +63,74 @@ export async function inviteUser(formData: FormData): Promise<ActionResult<{ id:
   return { success: true, data: { id: result.user.id } };
 }
 
+const updateUserRoleSchema = z.object({
+  userId: z.string().cuid(),
+  role: z.enum(["ADMIN", "CLIENT_ADMIN", "CLIENT_MEMBER"]),
+});
+
 export async function updateUserRole(
   userId: string,
   role: "ADMIN" | "CLIENT_ADMIN" | "CLIENT_MEMBER"
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const session = await requireAdmin();
+
+  const parsed = updateUserRoleSchema.safeParse({ userId, role });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  // Prevent self-modification
+  if (session.user.id === parsed.data.userId) {
+    return { success: false, error: "You cannot change your own role" };
+  }
+
+  // Prevent demoting the last admin
+  const target = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: { role: true },
+  });
+  if (!target) {
+    return { success: false, error: "User not found" };
+  }
+
+  if (target.role === "SUPER_ADMIN" || target.role === "ADMIN") {
+    const adminCount = await prisma.user.count({
+      where: { role: { in: ["SUPER_ADMIN", "ADMIN"] } },
+    });
+    if (adminCount <= 1 && parsed.data.role !== "ADMIN") {
+      return { success: false, error: "Cannot demote the last admin" };
+    }
+  }
 
   await prisma.user.update({
-    where: { id: userId },
-    data: { role },
+    where: { id: parsed.data.userId },
+    data: { role: parsed.data.role },
   });
 
   revalidatePath("/admin/users");
 
+  return { success: true, data: undefined };
+}
+
+export async function updateUserCompany(
+  userId: string,
+  companyId: string | null
+): Promise<ActionResult> {
+  await requireAdmin();
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+  if (!user) return { success: false, error: "User not found" };
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { companyId },
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/companies");
   return { success: true, data: undefined };
 }
 
@@ -86,7 +142,11 @@ export async function deleteUser(userId: string): Promise<ActionResult> {
     return { success: false, error: "You cannot delete your own account" };
   }
 
-  await prisma.user.delete({ where: { id: userId } });
+  try {
+    await prisma.user.delete({ where: { id: userId } });
+  } catch {
+    return { success: false, error: "Impossible de supprimer cet utilisateur" };
+  }
 
   revalidatePath("/admin/users");
 
