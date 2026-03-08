@@ -1,8 +1,8 @@
 "use client";
 
-import { Send, RotateCcw, Truck } from "lucide-react";
+import { Send, RotateCcw, Truck, Trash2 } from "lucide-react";
 import { InlineActions } from "@/components/admin/inline-actions";
-import { submitDeliverableForReview, resubmitDeliverable, markDeliverableDelivered } from "@/server/actions/deliverables";
+import { submitDeliverableForReview, resubmitDeliverable, markDeliverableDelivered, deleteDeliverable } from "@/server/actions/deliverables";
 
 interface DeliverableListActionsProps {
   deliverableId: string;
@@ -18,6 +18,13 @@ export function DeliverableListActions({ deliverableId, status }: DeliverableLis
       icon: <Send className="h-3.5 w-3.5" />,
       action: () => submitDeliverableForReview(deliverableId),
       confirm: "Soumettre ce livrable pour validation client ?",
+    });
+    actions.push({
+      label: "Supprimer",
+      icon: <Trash2 className="h-3.5 w-3.5" />,
+      action: () => deleteDeliverable(deliverableId),
+      confirm: "Supprimer ce livrable ? Cette action est irreversible.",
+      variant: "destructive" as const,
     });
   }
 

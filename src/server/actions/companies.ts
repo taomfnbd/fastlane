@@ -73,7 +73,11 @@ export async function updateCompany(formData: FormData): Promise<ActionResult> {
 export async function deleteCompany(companyId: string): Promise<ActionResult> {
   await requireAdmin();
 
-  await prisma.company.delete({ where: { id: companyId } });
+  try {
+    await prisma.company.delete({ where: { id: companyId } });
+  } catch {
+    return { success: false, error: "Impossible de supprimer cette entreprise (verifiez qu'elle n'a plus d'utilisateurs ou d'evenements)" };
+  }
 
   revalidatePath("/admin/companies");
   revalidatePath("/admin/dashboard");

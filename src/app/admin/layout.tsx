@@ -22,7 +22,18 @@ export default async function AdminLayout({
     }),
     prisma.strategy.count({ where: { status: { in: ["PENDING_REVIEW", "CHANGES_REQUESTED"] } } }),
     prisma.deliverable.count({ where: { status: { in: ["IN_REVIEW", "CHANGES_REQUESTED"] } } }),
-    prisma.event.count({ where: { status: "ACTIVE" } }),
+    prisma.event.count({
+      where: {
+        companies: {
+          some: {
+            OR: [
+              { strategies: { some: { status: { in: ["PENDING_REVIEW", "CHANGES_REQUESTED"] } } } },
+              { deliverables: { some: { status: { in: ["IN_REVIEW", "CHANGES_REQUESTED"] } } } },
+            ],
+          },
+        },
+      },
+    }),
     prisma.question.count({ where: { answeredAt: null } }),
   ]);
 

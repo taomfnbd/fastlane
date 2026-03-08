@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ProgressBar } from "@/components/shared/progress-bar";
-import { Calendar, Building2, Package, Target, MessageCircleQuestion } from "lucide-react";
+import { Calendar, Building2, Package, Target, MessageCircleQuestion, Send, Check, XCircle, MessageSquare, FileUp, RefreshCw } from "lucide-react";
 import { cn, relativeTime } from "@/lib/utils";
 import Link from "next/link";
 
@@ -68,9 +68,13 @@ export default async function AdminDashboardPage() {
       },
     }),
     prisma.activity.findMany({
-      take: 5,
+      take: 15,
       orderBy: { createdAt: "desc" },
-      include: { user: { select: { name: true } } },
+      include: {
+        user: { select: { name: true } },
+        strategy: { select: { id: true, title: true, eventCompany: { select: { eventId: true } } } },
+        deliverable: { select: { id: true, title: true, eventCompany: { select: { eventId: true } } } },
+      },
     }),
     prisma.question.findMany({
       where: { answeredAt: null },
@@ -127,7 +131,7 @@ export default async function AdminDashboardPage() {
       label: "Livrables en attente",
       value: pendingDeliverables,
       icon: Package,
-      href: "/admin/deliverables?status=pending",
+      href: "/admin/deliverables?status=review",
       progress: delivProgress,
       subText: `${approvedDeliverables}/${totalDeliverables} approuves`,
     },
@@ -138,6 +142,14 @@ export default async function AdminDashboardPage() {
       href: "/admin/strategies?status=pending",
       progress: stratProgress,
       subText: `${approvedStrategies}/${totalStrategies} approuvees`,
+    },
+    {
+      label: "Questions en attente",
+      value: unansweredQuestions.length,
+      icon: MessageCircleQuestion,
+      href: "/admin/dashboard#questions",
+      progress: undefined as number | undefined,
+      subText: undefined as string | undefined,
     },
   ];
 
@@ -166,14 +178,29 @@ export default async function AdminDashboardPage() {
     })),
   ]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 8);
+    .slice(0, 10);
+
+  const activityIcons: Record<string, typeof Calendar> = {
+    STRATEGY_CREATED: Target,
+    STRATEGY_UPDATED: Target,
+    STRATEGY_SUBMITTED: Send,
+    STRATEGY_APPROVED: Check,
+    STRATEGY_REJECTED: XCircle,
+    DELIVERABLE_CREATED: Package,
+    DELIVERABLE_SUBMITTED: Send,
+    DELIVERABLE_APPROVED: Check,
+    DELIVERABLE_REJECTED: XCircle,
+    COMMENT_ADDED: MessageSquare,
+    STATUS_CHANGED: RefreshCw,
+    FILE_UPLOADED: FileUp,
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader title="Tableau de bord" />
 
       {/* Stats - clickable cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {stats.map((stat) => (
           <Link
             key={stat.label}
@@ -199,7 +226,12 @@ export default async function AdminDashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* A traiter - 2/3 width */}
         <div className="lg:col-span-2">
-          <h2 className="text-sm font-medium mb-3">A traiter</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-medium">A traiter</h2>
+            {allActionItems.length > 0 && (
+              <Link href="/admin/strategies" className="text-xs text-primary hover:underline">Voir tout</Link>
+            )}
+          </div>
           {allActionItems.length === 0 ? (
             <p className="text-xs text-muted-foreground py-8 text-center rounded-md border">
               Aucun element en attente
@@ -346,32 +378,54 @@ export default async function AdminDashboardPage() {
 
       {/* Activite recente */}
       <div>
-        <h2 className="text-sm font-medium mb-3">Activite recente</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-medium">Activite recente</h2>
+          <Link href="/admin/activity" className="text-xs text-primary hover:underline">Voir tout</Link>
+        </div>
         {recentActivities.length === 0 ? (
           <p className="text-xs text-muted-foreground py-8 text-center">Aucune activite</p>
         ) : (
           <div className="space-y-0">
-            {recentActivities.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-2.5 py-2 text-sm">
-                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium mt-0.5">
-                  {activity.user.name.charAt(0)}
+            {recentActivities.map((activity) => {
+              const Icon = activityIcons[activity.type] ?? RefreshCw;
+              const href = activity.strategy?.eventCompany?.eventId
+                ? `/admin/events/${activity.strategy.eventCompany.eventId}/strategy`
+                : activity.deliverable?.eventCompany?.eventId
+                  ? `/admin/events/${activity.deliverable.eventCompany.eventId}/deliverables`
+                  : null;
+
+              const inner = (
+                <>
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted mt-0.5">
+                    <Icon className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs">
+                      <span className="font-medium">{activity.user.name}</span>{" "}
+                      <span className="text-muted-foreground">{activity.message}</span>
+                    </p>
+                    <p className="text-[11px] text-muted-foreground/60">
+                      {new Date(activity.createdAt).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </>
+              );
+
+              return href ? (
+                <Link key={activity.id} href={href} className="flex items-start gap-2.5 py-2 text-sm hover:bg-accent/50 rounded-md px-1 -mx-1 transition-colors">
+                  {inner}
+                </Link>
+              ) : (
+                <div key={activity.id} className="flex items-start gap-2.5 py-2 text-sm">
+                  {inner}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs">
-                    <span className="font-medium">{activity.user.name}</span>{" "}
-                    <span className="text-muted-foreground">{activity.message}</span>
-                  </p>
-                  <p className="text-[11px] text-muted-foreground/60">
-                    {new Date(activity.createdAt).toLocaleDateString("fr-FR", {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

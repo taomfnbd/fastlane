@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useOptimistic, useTransition } from "react";
+import { useState, useOptimistic, useTransition, useEffect } from "react";
 import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +26,7 @@ interface AdminNotificationBellProps {
   unreadCount: number;
 }
 
-export function AdminNotificationBell({ notifications, unreadCount }: AdminNotificationBellProps) {
+export function AdminNotificationBell({ notifications }: AdminNotificationBellProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -41,6 +41,13 @@ export function AdminNotificationBell({ notifications, unreadCount }: AdminNotif
   );
 
   const optimisticUnread = optimisticNotifs.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [router]);
 
   function handleNotificationClick(n: Notification) {
     setOpen(false);

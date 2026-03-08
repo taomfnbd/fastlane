@@ -30,7 +30,7 @@ export default function RegisterPage() {
         name,
         email,
         password,
-        callbackURL: "/portal/dashboard",
+        callbackURL: "/login?registered=true",
       });
 
       if (result.error) {
@@ -39,7 +39,7 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push("/portal/dashboard");
+      router.push("/login?registered=true");
       router.refresh();
     } catch {
       toast.error("Une erreur est survenue");

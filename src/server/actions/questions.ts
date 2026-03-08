@@ -123,6 +123,49 @@ export async function answerQuestion(formData: FormData): Promise<ActionResult> 
   return { success: true, data: undefined };
 }
 
+export async function postClientQuestion(content: string): Promise<ActionResult<{ id: string }>> {
+  const session = await getSession();
+  if (!session) return { success: false, error: "Not authenticated" };
+
+  const trimmed = content.trim();
+  if (!trimmed || trimmed.length > 5000) {
+    return { success: false, error: "Le message doit contenir entre 1 et 5000 caracteres." };
+  }
+
+  const user = await getUserWithRole(session.user.id);
+  if (!user || !user.companyId) {
+    return { success: false, error: "Utilisateur non associe a une entreprise." };
+  }
+
+  const question = await prisma.question.create({
+    data: {
+      content: trimmed,
+      authorId: user.id,
+      targetCompanyId: user.companyId,
+    },
+  });
+
+  // Notify all admins about the new support message
+  const admins = await prisma.user.findMany({
+    where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
+    select: { id: true },
+  });
+  if (admins.length > 0) {
+    await prisma.notification.createMany({
+      data: admins.map((a) => ({
+        title: "Nouveau message client",
+        message: `${user.name} a envoye un message via le support.`,
+        link: "/admin/dashboard",
+        userId: a.id,
+      })),
+    });
+  }
+
+  revalidatePath("/portal/contact");
+  revalidatePath("/admin");
+  return { success: true, data: { id: question.id } };
+}
+
 export async function getUnansweredQuestions() {
   await requireAdmin();
 

@@ -1,14 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+
+function RegisteredBanner() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("registered") !== "true") return null;
+
+  return (
+    <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/30 px-4 py-3">
+      <p className="text-sm text-emerald-800 dark:text-emerald-300">
+        Compte cree avec succes. Un administrateur doit vous assigner a une entreprise avant de pouvoir acceder au portail.
+      </p>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -47,6 +60,10 @@ export default function LoginPage() {
         <h1 className="text-lg font-semibold">Fastlane</h1>
         <p className="text-sm text-muted-foreground mt-1">Connectez-vous a votre compte</p>
       </div>
+
+      <Suspense>
+        <RegisteredBanner />
+      </Suspense>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">

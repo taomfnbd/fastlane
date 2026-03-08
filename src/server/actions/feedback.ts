@@ -39,6 +39,15 @@ export async function addComment(formData: FormData): Promise<ActionResult<{ id:
       if (!strategy || strategy.eventCompany.companyId !== user.companyId) {
         return { success: false, error: "Access denied" };
       }
+    } else if (strategyItemId) {
+      // Verify ownership via the parent strategy when only strategyItemId is provided
+      const item = await prisma.strategyItem.findUnique({
+        where: { id: strategyItemId },
+        include: { strategy: { include: { eventCompany: { select: { companyId: true } } } } },
+      });
+      if (!item || item.strategy.eventCompany.companyId !== user.companyId) {
+        return { success: false, error: "Access denied" };
+      }
     }
     if (deliverableId) {
       const deliverable = await prisma.deliverable.findUnique({
@@ -48,6 +57,10 @@ export async function addComment(formData: FormData): Promise<ActionResult<{ id:
       if (!deliverable || deliverable.eventCompany.companyId !== user.companyId) {
         return { success: false, error: "Access denied" };
       }
+    }
+    // Block comments with no entity attached
+    if (!strategyId && !strategyItemId && !deliverableId) {
+      return { success: false, error: "A comment must be attached to a strategy, item, or deliverable" };
     }
   }
 
@@ -124,8 +137,10 @@ export async function deleteComment(commentId: string): Promise<ActionResult> {
     }
   }
 
-  await prisma.comment.deleteMany({ where: { parentId: commentId } });
-  await prisma.comment.delete({ where: { id: commentId } });
+  await prisma.$transaction([
+    prisma.comment.deleteMany({ where: { parentId: commentId } }),
+    prisma.comment.delete({ where: { id: commentId } }),
+  ]);
 
   revalidatePath("/portal/strategy");
   revalidatePath("/portal/deliverables");

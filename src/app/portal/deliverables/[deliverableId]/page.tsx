@@ -39,9 +39,9 @@ export default async function DeliverableDetailPage({
       },
       comments: {
         include: {
-          author: { select: { name: true, image: true } },
+          author: { select: { id: true, name: true, image: true } },
           replies: {
-            include: { author: { select: { name: true, image: true } } },
+            include: { author: { select: { id: true, name: true, image: true } } },
             orderBy: { createdAt: "asc" },
           },
         },
@@ -117,14 +117,9 @@ export default async function DeliverableDetailPage({
               </div>
               {content.body != null && (
                 <div className="border-t pt-4">
-                  <div
-                    className="prose prose-sm max-w-none dark:prose-invert text-sm"
-                    dangerouslySetInnerHTML={{
-                      __html: String(content.body).includes("<")
-                        ? String(content.body)
-                        : `<pre class="whitespace-pre-wrap font-sans">${String(content.body)}</pre>`,
-                    }}
-                  />
+                  <pre className="whitespace-pre-wrap font-sans text-sm">
+                    {String(content.body)}
+                  </pre>
                 </div>
               )}
             </div>
@@ -170,7 +165,7 @@ export default async function DeliverableDetailPage({
         </h2>
         <div className="rounded-xl border p-3">
           <CommentSection
-            comments={deliverable.comments}
+            comments={deliverable.comments.map((c) => ({ ...c, authorId: c.author.id, replies: c.replies.map((r) => ({ ...r, authorId: r.author.id })) }))}
             currentUserId={session.user.id}
             deliverableId={deliverable.id}
           />

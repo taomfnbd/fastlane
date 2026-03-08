@@ -40,7 +40,7 @@ export function CreateEventDialog() {
         <Button><Plus className="mr-2 h-4 w-4" />Nouvel evenement</Button>
       </DialogTrigger>
       <DialogContent>
-        <form onSubmit={handleSubmit}>
+        <form key={String(open)} onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Creer un evenement</DialogTitle>
             <DialogDescription>Creer un nouvel evenement de growth hacking.</DialogDescription>

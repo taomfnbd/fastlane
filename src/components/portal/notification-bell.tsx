@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/popover";
 import { relativeTime } from "@/lib/utils";
 import { markAsRead, markAllAsRead } from "@/server/actions/notifications";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 interface Notification {
@@ -27,7 +26,7 @@ interface NotificationBellProps {
   unreadCount: number;
 }
 
-export function NotificationBell({ notifications, unreadCount }: NotificationBellProps) {
+export function NotificationBell({ notifications }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -128,16 +127,7 @@ export function NotificationBell({ notifications, unreadCount }: NotificationBel
                 </>
               );
 
-              return n.link ? (
-                <button
-                  key={n.id}
-                  type="button"
-                  className="flex w-full items-start gap-2.5 px-3 py-2.5 hover:bg-accent/50 transition-colors text-left"
-                  onClick={() => handleNotificationClick(n)}
-                >
-                  {inner}
-                </button>
-              ) : (
+              return (
                 <button
                   key={n.id}
                   type="button"

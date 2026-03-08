@@ -22,9 +22,13 @@ interface EventStatusSelectProps {
 
 export function EventStatusSelect({ eventId, currentStatus }: EventStatusSelectProps) {
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(currentStatus);
 
   async function handleChange(newStatus: string) {
+    const previousStatus = status;
+    setStatus(newStatus);
     setLoading(true);
+
     const res = await fetch(`/api/admin/events/${eventId}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -35,12 +39,13 @@ export function EventStatusSelect({ eventId, currentStatus }: EventStatusSelectP
       toast.success("Statut mis a jour");
     } else {
       toast.error("Echec de la mise a jour");
+      setStatus(previousStatus);
     }
     setLoading(false);
   }
 
   return (
-    <Select defaultValue={currentStatus} onValueChange={handleChange} disabled={loading}>
+    <Select value={status} onValueChange={handleChange} disabled={loading}>
       <SelectTrigger className="w-[160px]">
         <SelectValue />
       </SelectTrigger>

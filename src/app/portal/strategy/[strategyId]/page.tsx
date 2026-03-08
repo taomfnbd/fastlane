@@ -40,9 +40,9 @@ export default async function StrategyDetailPage({
           _count: { select: { comments: true } },
           comments: {
             include: {
-              author: { select: { name: true, image: true } },
+              author: { select: { id: true, name: true, image: true } },
               replies: {
-                include: { author: { select: { name: true, image: true } } },
+                include: { author: { select: { id: true, name: true, image: true } } },
                 orderBy: { createdAt: "asc" },
               },
             },
@@ -57,9 +57,9 @@ export default async function StrategyDetailPage({
       },
       comments: {
         include: {
-          author: { select: { name: true, image: true } },
+          author: { select: { id: true, name: true, image: true } },
           replies: {
-            include: { author: { select: { name: true, image: true } } },
+            include: { author: { select: { id: true, name: true, image: true } } },
             orderBy: { createdAt: "asc" },
           },
         },
@@ -141,7 +141,14 @@ export default async function StrategyDetailPage({
           {strategy.items.map((item, index) => (
             <StrategyItemCard
               key={item.id}
-              item={item}
+              item={{
+                ...item,
+                comments: item.comments.map((c) => ({
+                  ...c,
+                  authorId: c.author.id,
+                  replies: c.replies.map((r) => ({ ...r, authorId: r.author.id })),
+                })),
+              }}
               index={index}
               strategyId={strategy.id}
               strategyStatus={strategy.status}
@@ -156,7 +163,7 @@ export default async function StrategyDetailPage({
         <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-3">Commentaires</h2>
         <div className="rounded-xl border p-3">
           <CommentSection
-            comments={strategy.comments}
+            comments={strategy.comments.map((c) => ({ ...c, authorId: c.author.id, replies: c.replies.map((r) => ({ ...r, authorId: r.author.id })) }))}
             currentUserId={session.user.id}
             strategyId={strategy.id}
           />

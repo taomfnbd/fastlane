@@ -4,8 +4,11 @@ import { useState } from "react";
 import { AdminSidebar } from "./admin-sidebar";
 import { AdminNotificationBell } from "./notification-bell";
 import { AppHeader } from "@/components/shared/app-header";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { CommandPalette } from "./command-palette";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/lib/auth-client";
 
 interface Notification {
   id: string;
@@ -25,8 +28,19 @@ interface AdminShellProps {
 }
 
 export function AdminShell({ user, notifications, unreadCount, pendingCounts, children }: AdminShellProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("sidebar-collapsed") === "true";
+  });
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  function toggleCollapsed() {
+    setCollapsed((c) => {
+      const next = !c;
+      localStorage.setItem("sidebar-collapsed", String(next));
+      return next;
+    });
+  }
 
   return (
     <div className="min-h-screen">
@@ -35,7 +49,7 @@ export function AdminShell({ user, notifications, unreadCount, pendingCounts, ch
         <AdminSidebar
           user={user}
           collapsed={collapsed}
-          onToggle={() => setCollapsed((c) => !c)}
+          onToggle={toggleCollapsed}
           pendingCounts={pendingCounts}
         />
       </div>
@@ -55,13 +69,15 @@ export function AdminShell({ user, notifications, unreadCount, pendingCounts, ch
       {/* Main area */}
       <div
         className={cn(
-          "transition-all duration-150",
+          "transition-[padding] duration-150",
           collapsed ? "lg:pl-14" : "lg:pl-60"
         )}
       >
         <AppHeader
           user={user}
           onMobileMenuToggle={() => setMobileOpen(true)}
+          themeToggleSlot={<ThemeToggle />}
+          onSignOut={() => signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/login"; } } })}
           notificationSlot={
             <AdminNotificationBell
               notifications={notifications}
@@ -71,6 +87,8 @@ export function AdminShell({ user, notifications, unreadCount, pendingCounts, ch
         />
         <main className="px-4 py-4 lg:px-6">{children}</main>
       </div>
+
+      <CommandPalette />
     </div>
   );
 }

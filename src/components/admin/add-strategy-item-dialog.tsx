@@ -41,7 +41,7 @@ export function AddStrategyItemDialog({ strategyId }: AddStrategyItemDialogProps
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <form onSubmit={handleSubmit}>
+        <form key={String(open)} onSubmit={handleSubmit}>
           <DialogHeader><DialogTitle>Ajouter un element</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">

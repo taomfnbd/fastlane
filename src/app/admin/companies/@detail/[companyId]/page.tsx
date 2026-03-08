@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { DetailPanel } from "@/components/shared/detail-panel";
+import { EditCompanyDialog } from "@/components/admin/edit-company-dialog";
+import { CompanyDeleteButton } from "@/components/admin/company-delete-button";
 import { Calendar, Globe, Target, Package } from "lucide-react";
 import Link from "next/link";
 
@@ -26,7 +28,16 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     <DetailPanel>
       <Breadcrumbs items={[{ label: "Dashboard", href: "/admin/dashboard" }, { label: "Entreprises", href: "/admin/companies" }, { label: company.name }]} />
       <div>
-        <PageHeader title={company.name} description={company.description ?? undefined} />
+        <PageHeader
+          title={company.name}
+          description={company.description ?? undefined}
+          action={
+            <div className="flex items-center gap-2">
+              <EditCompanyDialog company={{ id: company.id, name: company.name, industry: company.industry, website: company.website, description: company.description }} />
+              <CompanyDeleteButton companyId={company.id} hasUsersOrEvents={company.users.length > 0 || company.events.length > 0} />
+            </div>
+          }
+        />
       </div>
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         {company.industry && <span>{company.industry}</span>}

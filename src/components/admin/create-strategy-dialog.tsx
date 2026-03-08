@@ -43,7 +43,7 @@ export function CreateStrategyDialog({ eventCompanyId, companyName }: CreateStra
         <Button size="sm"><Plus className="mr-1 h-3 w-3" />Nouvelle strategie</Button>
       </DialogTrigger>
       <DialogContent>
-        <form onSubmit={handleSubmit}>
+        <form key={String(open)} onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Creer une strategie</DialogTitle>
             <DialogDescription>Nouvelle strategie pour {companyName}</DialogDescription>
