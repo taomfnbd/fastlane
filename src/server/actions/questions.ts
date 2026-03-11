@@ -5,7 +5,7 @@ import { requireAdmin, getSession, getUserWithRole, isAdmin } from "@/lib/auth-s
 import { createQuestionSchema, answerQuestionSchema } from "@/types";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/types";
-import { notifyClientUsers, notifyAdmins } from "@/lib/notify";
+import { notifyClientUsers, notifyAdmins, notifyCompanyUsers } from "@/lib/notify";
 
 export async function createQuestion(formData: FormData): Promise<ActionResult<{ id: string }>> {
   const session = await requireAdmin();
@@ -44,16 +44,26 @@ export async function createQuestion(formData: FormData): Promise<ActionResult<{
   });
 
   // Notify client
+  const questionLink = parsed.data.strategyId
+    ? `/portal/strategy/${parsed.data.strategyId}`
+    : parsed.data.deliverableId
+      ? `/portal/deliverables/${parsed.data.deliverableId}`
+      : "/portal/contact";
+
   if (eventCompanyId) {
     await notifyClientUsers(
       eventCompanyId,
       "Nouvelle question",
       "L'equipe vous a pose une question.",
-      parsed.data.strategyId
-        ? `/portal/strategy/${parsed.data.strategyId}`
-        : parsed.data.deliverableId
-          ? `/portal/deliverables/${parsed.data.deliverableId}`
-          : "/portal/dashboard",
+      questionLink,
+    );
+  } else {
+    // Standalone question — notify via companyId directly
+    await notifyCompanyUsers(
+      parsed.data.targetCompanyId,
+      "Nouvelle question",
+      "L'equipe vous a pose une question.",
+      questionLink,
     );
   }
 
@@ -87,8 +97,10 @@ export async function answerQuestion(formData: FormData): Promise<ActionResult> 
   const user = await getUserWithRole(session.user.id);
   if (!user) return { success: false, error: "User not found" };
 
-  if (!isAdmin(user.role) && user.companyId !== question.targetCompanyId) {
-    return { success: false, error: "Access denied" };
+  if (!isAdmin(user.role)) {
+    if (user.role !== "CLIENT_ADMIN" || user.companyId !== question.targetCompanyId) {
+      return { success: false, error: "Access denied" };
+    }
   }
 
   await prisma.question.update({
@@ -116,6 +128,22 @@ export async function answerQuestion(formData: FormData): Promise<ActionResult> 
       "Le client a repondu a votre question.",
       "/admin/dashboard",
     );
+  } else {
+    // Standalone question — notify all admins directly
+    const admins = await prisma.user.findMany({
+      where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
+      select: { id: true },
+    });
+    if (admins.length > 0) {
+      await prisma.notification.createMany({
+        data: admins.map((a) => ({
+          title: "Reponse recue",
+          message: "Le client a repondu a votre question.",
+          link: "/admin/dashboard",
+          userId: a.id,
+        })),
+      });
+    }
   }
 
   revalidatePath("/admin");

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { DeadlineBadge } from "@/components/shared/deadline-badge";
 import { CommentSection } from "@/components/shared/comment-section";
 import { QuestionSection } from "@/components/shared/question-section";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
@@ -10,6 +11,8 @@ import { EditStrategyDialog } from "@/components/admin/edit-strategy-dialog";
 import { EditStrategyItemDialog } from "@/components/admin/edit-strategy-item-dialog";
 import { ResubmitButton } from "@/components/admin/resubmit-button";
 import { SubmitStrategyButton } from "@/components/admin/submit-strategy-button";
+import { ActivityTimeline } from "@/components/shared/activity-timeline";
+import { ExternalLink } from "lucide-react";
 
 export async function generateMetadata({ params }: { params: Promise<{ strategyId: string }> }) {
   const { strategyId } = await params;
@@ -93,7 +96,7 @@ export default async function AdminStrategyDetailPage({
       <div>
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-semibold tracking-tight">{strategy.title}</h1>
-          <EditStrategyDialog strategy={{ id: strategy.id, title: strategy.title, description: strategy.description }} />
+          <EditStrategyDialog strategy={{ id: strategy.id, title: strategy.title, description: strategy.description, dueDate: strategy.dueDate?.toISOString() ?? null }} />
         </div>
         {strategy.description && <p className="text-sm text-muted-foreground mt-0.5">{strategy.description}</p>}
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
@@ -102,10 +105,24 @@ export default async function AdminStrategyDetailPage({
           <span>{strategy.eventCompany.event.name}</span>
           <span>v{strategy.version}</span>
           {totalItems > 0 && <span>{approvedItems}/{totalItems} approuves</span>}
+          {strategy.dueDate && (
+            <DeadlineBadge dueDate={strategy.dueDate} status={strategy.status} />
+          )}
         </div>
-        <div className="flex gap-2 mt-2">
+        <div className="flex items-center gap-2 mt-2">
           {strategy.status === "DRAFT" && <SubmitStrategyButton strategyId={strategy.id} />}
           {strategy.status === "CHANGES_REQUESTED" && <ResubmitButton id={strategy.id} type="strategy" />}
+          {strategy.status !== "DRAFT" && (
+            <a
+              href={`/portal/strategy/${strategy.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors ml-auto"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Vue client
+            </a>
+          )}
         </div>
       </div>
 
@@ -165,6 +182,8 @@ export default async function AdminStrategyDetailPage({
           />
         </div>
       </div>
+
+      <ActivityTimeline strategyId={strategy.id} />
     </DetailPanel>
   );
 }

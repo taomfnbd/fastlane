@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { DeadlineBadge } from "@/components/shared/deadline-badge";
 import { ProgressBar } from "@/components/shared/progress-bar";
 import { StrategiesFilter } from "@/components/admin/strategies-filter";
 import { Target } from "lucide-react";
@@ -87,6 +88,9 @@ export default async function AdminStrategiesPage({
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium truncate">{strategy.title}</p>
                     <StatusBadge status={strategy.status} />
+                    {strategy.dueDate && (
+                      <DeadlineBadge dueDate={strategy.dueDate} status={strategy.status} />
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {strategy.eventCompany.company.name} · {strategy.eventCompany.event.name}

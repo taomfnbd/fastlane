@@ -28,7 +28,16 @@ interface EditDeliverableDialogProps {
     description: string | null;
     type: string;
     content: unknown;
+    dueDate: string | null;
   };
+}
+
+function toLocalDatetime(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const offset = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - offset * 60000);
+  return local.toISOString().slice(0, 16);
 }
 
 export function EditDeliverableDialog({ deliverable }: EditDeliverableDialogProps) {
@@ -92,6 +101,10 @@ export function EditDeliverableDialog({ deliverable }: EditDeliverableDialogProp
           <div className="space-y-2">
             <Label htmlFor="edit-del-content">Contenu</Label>
             <Textarea id="edit-del-content" name="content" defaultValue={textContent} rows={8} placeholder="Contenu du livrable (texte, script, etc.)" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-del-due">Echeance</Label>
+            <Input id="edit-del-due" name="dueDate" type="datetime-local" defaultValue={toLocalDatetime(deliverable.dueDate)} />
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Annuler</Button>

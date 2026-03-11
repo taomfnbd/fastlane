@@ -2,34 +2,44 @@ import { prisma } from "@/lib/prisma";
 import { requireClient } from "@/lib/auth-server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getDeliverableTypeLabel, EMPTY_STATES } from "@/lib/portal-constants";
-import { Package, FileText, Mail, Globe, Share2, Megaphone } from "lucide-react";
+import { Package } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Livrables" };
 
-const typeIconConfig: Record<string, { icon: typeof FileText; color: string }> = {
-  EMAIL_TEMPLATE: { icon: Mail, color: "text-blue-500" },
-  LANDING_PAGE: { icon: Globe, color: "text-blue-500" },
-  SOCIAL_POST: { icon: Share2, color: "text-amber-500" },
-  SCRIPT: { icon: FileText, color: "text-rose-500" },
-  DOCUMENT: { icon: FileText, color: "text-blue-500" },
-  AD_CREATIVE: { icon: Megaphone, color: "text-amber-500" },
-  OTHER: { icon: Package, color: "text-muted-foreground" },
+const typeIconMap: Record<string, string> = {
+  EMAIL_TEMPLATE: "mail",
+  LANDING_PAGE: "language",
+  SOCIAL_POST: "share",
+  SCRIPT: "code",
+  DOCUMENT: "description",
+  AD_CREATIVE: "campaign",
+  OTHER: "inventory_2",
 };
 
-function getStatusBadge(status: string) {
+const typeColorMap: Record<string, string> = {
+  EMAIL_TEMPLATE: "text-blue-500",
+  LANDING_PAGE: "text-blue-500",
+  SOCIAL_POST: "text-amber-500",
+  SCRIPT: "text-rose-500",
+  DOCUMENT: "text-blue-500",
+  AD_CREATIVE: "text-amber-500",
+  OTHER: "text-muted-foreground",
+};
+
+function getStatusPill(status: string) {
   switch (status) {
     case "APPROVED":
     case "DELIVERED":
-      return { label: "VALID\u00c9", className: "bg-emerald-500/15 text-emerald-500" };
+      return { label: "VALIDÉ", className: "bg-emerald-500/20 text-emerald-400" };
     case "IN_REVIEW":
     case "REVISED":
-      return { label: "EN ATTENTE", className: "bg-amber-500/15 text-amber-500" };
+      return { label: "EN ATTENTE", className: "bg-amber-500/20 text-amber-400" };
     case "CHANGES_REQUESTED":
-      return { label: "MODIFICATIONS", className: "bg-red-500/15 text-red-500" };
+      return { label: "MODIFICATIONS", className: "bg-red-500/20 text-red-400" };
     default:
-      return { label: "SOUMIS", className: "bg-blue-500/15 text-blue-500" };
+      return { label: "SOUMIS", className: "bg-emerald-500/20 text-emerald-400" };
   }
 }
 
@@ -61,9 +71,9 @@ export default async function PortalDeliverablesPage() {
     return (
       <div className="space-y-8 animate-fade-up">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Vos D&eacute;livrables</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Vos Délivrables</h1>
           <p className="text-sm text-muted-foreground">
-            G&eacute;rez et suivez la validation de vos documents d&apos;entreprise
+            Gérez et suivez la validation de vos documents d&apos;entreprise
           </p>
         </div>
         <EmptyState
@@ -85,26 +95,26 @@ export default async function PortalDeliverablesPage() {
     <div className="space-y-8 animate-fade-up">
       {/* Page header */}
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Vos D&eacute;livrables</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Vos Délivrables</h1>
         <p className="text-sm text-muted-foreground">
-          G&eacute;rez et suivez la validation de vos documents d&apos;entreprise
+          Gérez et suivez la validation de vos documents d&apos;entreprise
         </p>
       </div>
 
-      {/* Progress header card */}
-      <div className="rounded-xl border bg-card p-5">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          &Eacute;tat d&apos;avancement
-        </p>
-        <div className="mt-3 flex items-baseline justify-between">
-          <p className="text-sm text-muted-foreground">
-            {approved.length} livrable{approved.length > 1 ? "s" : ""} valid&eacute;{approved.length > 1 ? "s" : ""} sur {total}
+      {/* Progress card */}
+      <div className="rounded-xl bg-card p-6 border border-primary/5 shadow-portal-card">
+        <div className="flex justify-between items-end mb-4">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground mb-1">Progression totale</p>
+            <h2 className="text-3xl font-bold text-foreground">{progressPercent}%</h2>
+          </div>
+          <p className="text-sm font-medium text-[#6961ff]">
+            {approved.length} sur {total} fichiers validés
           </p>
-          <p className="text-2xl font-bold text-primary">{progressPercent}%</p>
         </div>
-        <div className="mt-3 h-2 w-full rounded-full bg-muted">
+        <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
           <div
-            className="h-2 rounded-full bg-amber-500 transition-all"
+            className="h-full bg-amber-500 rounded-full custom-glow transition-all"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -112,37 +122,39 @@ export default async function PortalDeliverablesPage() {
 
       {/* Document grid */}
       <div className="space-y-4">
-        <h2 className="text-sm font-medium">Mes documents</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Mes documents</h2>
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {deliverables.map((d) => {
-            const config = typeIconConfig[d.type] ?? typeIconConfig.OTHER;
-            const Icon = config.icon;
-            const badge = getStatusBadge(d.status);
+            const icon = typeIconMap[d.type] ?? "inventory_2";
+            const iconColor = typeColorMap[d.type] ?? "text-muted-foreground";
+            const pill = getStatusPill(d.status);
 
             return (
               <Link
                 key={d.id}
                 href={`/portal/deliverables/${d.id}`}
-                className="group rounded-xl border bg-card overflow-hidden hover:shadow-md transition-shadow"
+                className="group relative flex flex-col p-4 rounded-xl bg-card border border-primary/5 hover:border-[#6961ff] transition-all"
               >
                 {/* Icon area */}
-                <div className="flex h-32 items-center justify-center rounded-lg bg-muted/50 m-3 mb-0">
-                  <Icon className={cn("h-10 w-10", config.color)} />
+                <div className="w-full aspect-square rounded-lg mb-4 bg-muted flex items-center justify-center">
+                  <span className={cn("material-symbols-outlined text-4xl", iconColor)}>
+                    {icon}
+                  </span>
                 </div>
 
                 {/* Content */}
-                <div className="p-3 pt-2.5 space-y-1.5">
-                  <p className="text-sm font-medium truncate">{d.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {getDeliverableTypeLabel(d.type)} &middot; {formatDate(d.updatedAt)}
+                <div className="flex flex-col gap-1">
+                  <h4 className="font-semibold text-sm truncate text-foreground">{d.title}</h4>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                    {getDeliverableTypeLabel(d.type)} &middot; {d.eventCompany.event.name}
                   </p>
                   <span
                     className={cn(
-                      "inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                      badge.className,
+                      "mt-2 inline-flex items-center self-start px-2 py-0.5 rounded-full text-[10px] font-bold",
+                      pill.className,
                     )}
                   >
-                    {badge.label}
+                    {pill.label}
                   </span>
                 </div>
               </Link>

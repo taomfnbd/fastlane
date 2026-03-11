@@ -5,16 +5,20 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes — no auth required
-  const publicPaths = ["/", "/login", "/register", "/forgot-password"];
+  const publicPaths = ["/", "/login", "/register", "/forgot-password", "/reset-password"];
   if (publicPaths.includes(pathname)) {
     return NextResponse.next();
   }
 
   // Check if the user has a session cookie
-  const sessionCookie = getSessionCookie(request);
+  const sessionCookie = getSessionCookie(request, {
+    cookiePrefix: "fastlane",
+  });
   if (!sessionCookie) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
+    if (pathname.startsWith("/")) {
+      loginUrl.searchParams.set("callbackUrl", pathname);
+    }
     return NextResponse.redirect(loginUrl);
   }
 

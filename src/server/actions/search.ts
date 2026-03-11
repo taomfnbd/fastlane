@@ -98,11 +98,13 @@ export async function resolveEntityNames(ids: string[]): Promise<Record<string, 
   await requireAdmin();
   if (ids.length === 0) return {};
 
+  const cappedIds = ids.slice(0, 50);
+
   const [events, companies, strategies, deliverables] = await Promise.all([
-    prisma.event.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } }),
-    prisma.company.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } }),
-    prisma.strategy.findMany({ where: { id: { in: ids } }, select: { id: true, title: true } }),
-    prisma.deliverable.findMany({ where: { id: { in: ids } }, select: { id: true, title: true } }),
+    prisma.event.findMany({ where: { id: { in: cappedIds } }, select: { id: true, name: true } }),
+    prisma.company.findMany({ where: { id: { in: cappedIds } }, select: { id: true, name: true } }),
+    prisma.strategy.findMany({ where: { id: { in: cappedIds } }, select: { id: true, title: true } }),
+    prisma.deliverable.findMany({ where: { id: { in: cappedIds } }, select: { id: true, title: true } }),
   ]);
 
   const map: Record<string, string> = {};

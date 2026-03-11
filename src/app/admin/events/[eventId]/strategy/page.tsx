@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { DeadlineBadge } from "@/components/shared/deadline-badge";
+import { ProgressBar } from "@/components/shared/progress-bar";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Target } from "lucide-react";
 import Link from "next/link";
@@ -70,9 +72,19 @@ export default async function StrategyListPage({
                     className="min-w-0 flex-1"
                   >
                     <p className="text-sm font-medium truncate">{strategy.title}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {total > 0 ? `${approved}/${total} items` : "0 items"}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {total > 0 ? (
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <ProgressBar value={total > 0 ? Math.round((approved / total) * 100) : 0} className="w-16" />
+                          <span className="text-[11px] text-muted-foreground shrink-0">{approved}/{total}</span>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground">0 items</span>
+                      )}
+                      {strategy.dueDate && (
+                        <DeadlineBadge dueDate={strategy.dueDate} status={strategy.status} />
+                      )}
+                    </div>
                   </Link>
                   <StatusBadge status={strategy.status} />
                   <StrategyListActions strategyId={strategy.id} status={strategy.status} />

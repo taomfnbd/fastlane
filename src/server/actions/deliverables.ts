@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin, getSession, getUserWithRole, isAdmin } from "@/lib/auth-server";
 import { createDeliverableSchema, updateDeliverableSchema } from "@/types";
 import { revalidatePath } from "next/cache";
+import { del } from "@vercel/blob";
 import type { ActionResult } from "@/types";
 import { notifyAdmins, notifyClientUsers } from "@/lib/notify";
 
@@ -15,10 +16,22 @@ export async function createDeliverable(formData: FormData): Promise<ActionResul
     description: formData.get("description") || undefined,
     type: formData.get("type"),
     eventCompanyId: formData.get("eventCompanyId"),
+    dueDate: formData.get("dueDate") || undefined,
   });
 
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  let dueDate: Date | null = null;
+  if (parsed.data.dueDate) {
+    dueDate = new Date(parsed.data.dueDate);
+    if (isNaN(dueDate.getTime())) {
+      return { success: false, error: "Date d'echeance invalide" };
+    }
+    if (dueDate <= new Date()) {
+      return { success: false, error: "La date d'echeance doit etre dans le futur" };
+    }
   }
 
   const deliverable = await prisma.deliverable.create({
@@ -27,6 +40,7 @@ export async function createDeliverable(formData: FormData): Promise<ActionResul
       description: parsed.data.description ?? null,
       type: parsed.data.type,
       eventCompanyId: parsed.data.eventCompanyId,
+      dueDate,
     },
   });
 
@@ -133,6 +147,7 @@ export async function approveDeliverable(deliverableId: string): Promise<ActionR
   revalidatePath("/admin/events");
   revalidatePath("/portal/deliverables");
   revalidatePath(`/portal/deliverables/${deliverableId}`);
+  revalidatePath("/portal/dashboard");
   return { success: true, data: undefined };
 }
 
@@ -186,6 +201,7 @@ export async function requestDeliverableChanges(deliverableId: string): Promise<
   revalidatePath("/admin/events");
   revalidatePath("/portal/deliverables");
   revalidatePath(`/portal/deliverables/${deliverableId}`);
+  revalidatePath("/portal/dashboard");
   return { success: true, data: undefined };
 }
 
@@ -198,6 +214,7 @@ export async function updateDeliverable(formData: FormData): Promise<ActionResul
     description: formData.get("description") || undefined,
     type: formData.get("type"),
     content: formData.get("content") || undefined,
+    dueDate: formData.get("dueDate") || undefined,
   });
 
   if (!parsed.success) {
@@ -210,6 +227,19 @@ export async function updateDeliverable(formData: FormData): Promise<ActionResul
   });
   if (!deliverable) return { success: false, error: "Deliverable not found" };
 
+  let dueDate: Date | null | undefined = undefined;
+  if (parsed.data.dueDate === "") {
+    dueDate = null;
+  } else if (parsed.data.dueDate) {
+    dueDate = new Date(parsed.data.dueDate);
+    if (isNaN(dueDate.getTime())) {
+      return { success: false, error: "Date d'echeance invalide" };
+    }
+    if (dueDate <= new Date()) {
+      return { success: false, error: "La date d'echeance doit etre dans le futur" };
+    }
+  }
+
   await prisma.deliverable.update({
     where: { id: parsed.data.id },
     data: {
@@ -217,6 +247,7 @@ export async function updateDeliverable(formData: FormData): Promise<ActionResul
       description: parsed.data.description ?? null,
       type: parsed.data.type,
       ...(parsed.data.content !== undefined ? { content: { text: parsed.data.content } } : {}),
+      ...(dueDate !== undefined ? { dueDate } : {}),
     },
   });
 
@@ -339,5 +370,47 @@ export async function deleteDeliverable(deliverableId: string): Promise<ActionRe
   revalidatePath("/admin/deliverables");
   revalidatePath("/portal/deliverables");
   revalidatePath("/admin/dashboard");
+  return { success: true, data: undefined };
+}
+
+export async function removeDeliverableFile(deliverableId: string): Promise<ActionResult> {
+  const session = await requireAdmin();
+
+  const deliverable = await prisma.deliverable.findUnique({
+    where: { id: deliverableId },
+    select: { id: true, title: true, fileUrl: true, fileName: true },
+  });
+
+  if (!deliverable) {
+    return { success: false, error: "Livrable introuvable" };
+  }
+
+  if (!deliverable.fileUrl) {
+    return { success: false, error: "Aucun fichier attache a ce livrable" };
+  }
+
+  await del(deliverable.fileUrl);
+
+  await prisma.deliverable.update({
+    where: { id: deliverableId },
+    data: {
+      fileUrl: null,
+      fileName: null,
+      fileSize: null,
+    },
+  });
+
+  await prisma.activity.create({
+    data: {
+      type: "FILE_UPLOADED",
+      message: `removed file "${deliverable.fileName}" from "${deliverable.title}"`,
+      userId: session.user.id,
+      deliverableId,
+    },
+  });
+
+  revalidatePath("/admin/events");
+  revalidatePath("/admin/deliverables");
+  revalidatePath("/portal/deliverables");
   return { success: true, data: undefined };
 }

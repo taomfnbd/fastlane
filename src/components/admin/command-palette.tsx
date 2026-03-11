@@ -3,7 +3,10 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
-import { Calendar, Building2, Target, Package, Users, Search, Loader2 } from "lucide-react";
+import {
+  Calendar, Building2, Target, Package, Users, Search,
+  Loader2, Plus, UserPlus, Zap,
+} from "lucide-react";
 import { globalSearch } from "@/server/actions/search";
 
 const typeIcons: Record<string, typeof Calendar> = {
@@ -21,6 +24,27 @@ const typeLabels: Record<string, string> = {
   deliverable: "Livrables",
   user: "Utilisateurs",
 };
+
+const quickActions = [
+  {
+    id: "create-event",
+    title: "Creer un evenement",
+    icon: Calendar,
+    href: "/admin/events?action=create",
+  },
+  {
+    id: "create-company",
+    title: "Creer une entreprise",
+    icon: Building2,
+    href: "/admin/companies?action=create",
+  },
+  {
+    id: "invite-user",
+    title: "Inviter un utilisateur",
+    icon: UserPlus,
+    href: "/admin/users?action=invite",
+  },
+];
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
@@ -69,6 +93,8 @@ export function CommandPalette() {
     return acc;
   }, {});
 
+  const showQuickActions = query.length < 2;
+
   return (
     <div className="fixed inset-0 z-[100]">
       <div className="fixed inset-0 bg-black/50" onClick={() => { setOpen(false); setQuery(""); setResults([]); }} />
@@ -83,12 +109,60 @@ export function CommandPalette() {
             <Command.Input
               value={query}
               onValueChange={setQuery}
-              placeholder="Rechercher..."
+              placeholder="Rechercher ou executer une action..."
               className="flex h-10 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
               autoFocus
             />
           </div>
           <Command.List className="max-h-80 overflow-y-auto p-1">
+            {showQuickActions && (
+              <Command.Group
+                heading="Actions rapides"
+                className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground"
+              >
+                {quickActions.map((action) => (
+                  <Command.Item
+                    key={action.id}
+                    value={action.id}
+                    onSelect={() => handleSelect(action.href)}
+                    className="flex items-center gap-2.5 rounded-md px-2 py-2 text-sm cursor-pointer aria-selected:bg-accent"
+                  >
+                    <div className="flex h-6 w-6 items-center justify-center rounded bg-primary/10">
+                      <action.icon className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <span>{action.title}</span>
+                    <Plus className="ml-auto h-3 w-3 text-muted-foreground" />
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            )}
+
+            {showQuickActions && (
+              <Command.Group
+                heading="Navigation"
+                className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground"
+              >
+                {[
+                  { label: "Dashboard", href: "/admin/dashboard", icon: Zap },
+                  { label: "Evenements", href: "/admin/events", icon: Calendar },
+                  { label: "Entreprises", href: "/admin/companies", icon: Building2 },
+                  { label: "Strategies", href: "/admin/strategies", icon: Target },
+                  { label: "Livrables", href: "/admin/deliverables", icon: Package },
+                  { label: "Utilisateurs", href: "/admin/users", icon: Users },
+                ].map((item) => (
+                  <Command.Item
+                    key={item.href}
+                    value={item.href}
+                    onSelect={() => handleSelect(item.href)}
+                    className="flex items-center gap-2.5 rounded-md px-2 py-2 text-sm cursor-pointer aria-selected:bg-accent"
+                  >
+                    <item.icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span>{item.label}</span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            )}
+
             {query.length >= 2 && results.length === 0 && !isPending && (
               <Command.Empty className="py-6 text-center text-xs text-muted-foreground">
                 Aucun resultat.
@@ -122,6 +196,10 @@ export function CommandPalette() {
               );
             })}
           </Command.List>
+          <div className="border-t px-3 py-2 text-[11px] text-muted-foreground flex items-center justify-between">
+            <span>Tapez pour rechercher</span>
+            <kbd className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono">ESC</kbd>
+          </div>
         </Command>
       </div>
     </div>

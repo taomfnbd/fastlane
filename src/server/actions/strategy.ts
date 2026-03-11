@@ -14,10 +14,22 @@ export async function createStrategy(formData: FormData): Promise<ActionResult<{
     title: formData.get("title"),
     description: formData.get("description") || undefined,
     eventCompanyId: formData.get("eventCompanyId"),
+    dueDate: formData.get("dueDate") || undefined,
   });
 
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  let dueDate: Date | null = null;
+  if (parsed.data.dueDate) {
+    dueDate = new Date(parsed.data.dueDate);
+    if (isNaN(dueDate.getTime())) {
+      return { success: false, error: "Date d'echeance invalide" };
+    }
+    if (dueDate <= new Date()) {
+      return { success: false, error: "La date d'echeance doit etre dans le futur" };
+    }
   }
 
   const strategy = await prisma.strategy.create({
@@ -26,6 +38,7 @@ export async function createStrategy(formData: FormData): Promise<ActionResult<{
       description: parsed.data.description ?? null,
       content: {},
       eventCompanyId: parsed.data.eventCompanyId,
+      dueDate,
     },
   });
 
@@ -247,6 +260,7 @@ export async function updateStrategy(formData: FormData): Promise<ActionResult> 
     id: formData.get("id"),
     title: formData.get("title"),
     description: formData.get("description") || undefined,
+    dueDate: formData.get("dueDate") || undefined,
   });
 
   if (!parsed.success) {
@@ -259,11 +273,25 @@ export async function updateStrategy(formData: FormData): Promise<ActionResult> 
   });
   if (!strategy) return { success: false, error: "Strategy not found" };
 
+  let dueDate: Date | null | undefined = undefined;
+  if (parsed.data.dueDate === "") {
+    dueDate = null;
+  } else if (parsed.data.dueDate) {
+    dueDate = new Date(parsed.data.dueDate);
+    if (isNaN(dueDate.getTime())) {
+      return { success: false, error: "Date d'echeance invalide" };
+    }
+    if (dueDate <= new Date()) {
+      return { success: false, error: "La date d'echeance doit etre dans le futur" };
+    }
+  }
+
   await prisma.strategy.update({
     where: { id: parsed.data.id },
     data: {
       title: parsed.data.title,
       description: parsed.data.description ?? null,
+      ...(dueDate !== undefined ? { dueDate } : {}),
     },
   });
 

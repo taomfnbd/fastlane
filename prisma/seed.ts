@@ -9,15 +9,17 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("Seeding database...");
 
-  // Clean existing data
+  // Clean existing data (order matters for foreign keys)
   await prisma.notification.deleteMany();
   await prisma.activity.deleteMany();
+  await prisma.question.deleteMany();
   await prisma.comment.deleteMany();
   await prisma.strategyItem.deleteMany();
   await prisma.strategy.deleteMany();
   await prisma.deliverable.deleteMany();
   await prisma.eventCompany.deleteMany();
   await prisma.event.deleteMany();
+  await prisma.webhookConfig.deleteMany();
   await prisma.session.deleteMany();
   await prisma.account.deleteMany();
   await prisma.verification.deleteMany();
@@ -462,13 +464,7 @@ async function main() {
   ]);
 
   console.log("Notifications created");
-  console.log("Seed completed!");
-  console.log("");
-  console.log("Test accounts:");
-  console.log("  Admin:  admin@fastlane.io / password123");
-  console.log("  Team:   team1@fastlane.io / password123");
-  console.log("  Client: sophie@techvision.io / password123");
-  console.log("  Client: emma@greenleaf.shop / password123");
+  console.log("Seed completed! See CLAUDE.md for test accounts.");
 }
 
 main()

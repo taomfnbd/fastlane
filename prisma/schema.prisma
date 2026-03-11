@@ -221,6 +221,7 @@ model Strategy {
   content        Json
   status         StrategyStatus @default(DRAFT)
   version        Int            @default(1)
+  dueDate        DateTime?
   eventCompanyId String
   eventCompany   EventCompany   @relation(fields: [eventCompanyId], references: [id], onDelete: Cascade)
 
@@ -267,6 +268,8 @@ model Deliverable {
   version        Int               @default(1)
   fileUrl        String?
   fileName       String?
+  fileSize       Int?
+  dueDate        DateTime?
   eventCompanyId String
   eventCompany   EventCompany      @relation(fields: [eventCompanyId], references: [id], onDelete: Cascade)
 
@@ -377,4 +380,28 @@ model Question {
   @@index([strategyItemId])
   @@index([authorId])
   @@index([answeredAt])
+}
+
+// ==================== SETTINGS ====================
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value Json
+
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== WEBHOOKS ====================
+
+model WebhookConfig {
+  id        String  @id @default(cuid())
+  name      String
+  url       String
+  events    String[] // e.g. ["strategy.submitted", "deliverable.approved"]
+  active    Boolean @default(true)
+  secret    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

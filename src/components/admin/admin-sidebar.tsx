@@ -14,6 +14,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   History,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const mainNav = [
   { label: "Livrables", href: "/admin/deliverables", icon: Package, countKey: "pendingDeliverables" as const },
   { label: "Entreprises", href: "/admin/companies", icon: Building2 },
   { label: "Activite", href: "/admin/activity", icon: History },
+  { label: "Analytiques", href: "/admin/analytics", icon: BarChart3 },
 ];
 
 const workspaceNav = [

@@ -33,23 +33,33 @@ const labelMap: Record<string, string> = {
   strategies: "Strategies",
   timeline: "Activite",
   activity: "Activite",
+  analytics: "Analytiques",
 };
 
 export function AppHeader({ user, notificationSlot, themeToggleSlot, onMobileMenuToggle, onSignOut }: AppHeaderProps) {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
   const [entityNames, setEntityNames] = useState<Record<string, string>>({});
+  const [loadingEntities, setLoadingEntities] = useState(false);
 
   // Detect cuid-like segments (25 chars starting with c)
-  const idSegments = segments.filter((s) => /^c[a-z0-9]{24}$/.test(s));
+  const isId = (s: string) => /^c[a-z0-9]{24}$/.test(s);
+  const idSegments = segments.filter(isId);
 
   useEffect(() => {
     if (idSegments.length === 0) {
       setEntityNames({});
+      setLoadingEntities(false);
       return;
     }
-    resolveEntityNames(idSegments).then(setEntityNames);
+    setLoadingEntities(true);
+    resolveEntityNames(idSegments)
+      .then(setEntityNames)
+      .finally(() => setLoadingEntities(false));
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Skip first segment (admin/portal) — redundant with sidebar
+  const visibleSegments = segments.slice(1);
 
   function openSearch() {
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }));
@@ -71,20 +81,30 @@ export function AppHeader({ user, notificationSlot, themeToggleSlot, onMobileMen
 
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1 text-sm min-w-0">
-        {segments.map((segment, i) => {
-          const isLast = i === segments.length - 1;
-          const label = entityNames[segment] ?? labelMap[segment] ?? segment.charAt(0).toUpperCase() + segment.slice(1);
+        {visibleSegments.map((segment, i) => {
+          const isLast = i === visibleSegments.length - 1;
+          const isIdSegment = isId(segment);
+          const showSkeleton = isIdSegment && loadingEntities && !entityNames[segment];
+          const label = entityNames[segment] ?? labelMap[segment] ?? (isIdSegment ? null : segment.charAt(0).toUpperCase() + segment.slice(1));
+          // Build accumulated path: include the skipped first segment
+          const href = "/" + segments.slice(0, i + 2).join("/");
           return (
             <span key={segment + i} className="flex items-center gap-1 min-w-0">
               {i > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />}
-              <span
-                className={cn(
-                  "truncate max-w-32",
-                  isLast ? "text-foreground font-medium" : "text-muted-foreground"
-                )}
-              >
-                {label}
-              </span>
+              {showSkeleton ? (
+                <span className="h-4 w-20 bg-muted animate-pulse rounded" />
+              ) : isLast ? (
+                <span className={cn("truncate max-w-32 text-foreground font-medium")}>
+                  {label}
+                </span>
+              ) : (
+                <Link
+                  href={href}
+                  className={cn("truncate max-w-32 text-muted-foreground hover:text-foreground transition-colors")}
+                >
+                  {label}
+                </Link>
+              )}
             </span>
           );
         })}

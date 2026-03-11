@@ -2,10 +2,7 @@
 
 import { PortalSidebar } from "./portal-sidebar";
 import { PortalBottomNav } from "./portal-bottom-nav";
-import { NotificationBell } from "./notification-bell";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import Link from "next/link";
-import { Bell } from "lucide-react";
 
 interface Notification {
   id: string;
@@ -24,49 +21,65 @@ interface PortalShellProps {
   unreadCount: number;
   pendingStrategies: number;
   pendingDeliverables: number;
+  unansweredQuestions: number;
   children: React.ReactNode;
 }
 
 export function PortalShell({
   user,
   companyName,
-  notifications,
   unreadCount,
   pendingStrategies,
   pendingDeliverables,
+  unansweredQuestions,
   children,
 }: PortalShellProps) {
   return (
-    <div className="min-h-screen">
+    <div className="portal-theme min-h-screen bg-background">
       {/* Desktop sidebar */}
       <div className="hidden lg:block">
         <PortalSidebar
           user={user}
           companyName={companyName}
-          pendingCounts={{ pendingStrategies, pendingDeliverables }}
+          pendingCounts={{ pendingStrategies, pendingDeliverables, unansweredQuestions }}
         />
       </div>
 
+      {/* Mobile header */}
+      <header className="sticky top-0 z-50 flex h-14 items-center justify-between px-5 bg-background/80 backdrop-blur-md border-b border-primary/5 lg:hidden">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-[#fefce8] flex items-center justify-center overflow-hidden">
+            <span className="text-sm font-bold text-[#6961ff]">F</span>
+          </div>
+          <span className="text-xl font-bold text-foreground tracking-tight">Fastlane</span>
+        </div>
+        <Link
+          href="/portal/notifications"
+          className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <span className="material-symbols-outlined text-2xl">notifications</span>
+          {unreadCount > 0 && (
+            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#6961ff] ring-2 ring-background" />
+          )}
+        </Link>
+      </header>
+
       {/* Main area */}
-      <div className="lg:pl-56">
-        {/* Top bar with notification bell */}
-        <header className="sticky top-0 z-40 flex h-14 items-center justify-end gap-2 border-b bg-background/80 px-4 backdrop-blur-sm lg:px-6">
-          <ThemeToggle />
+      <div className="lg:pl-72">
+        {/* Desktop notification bar */}
+        <div className="hidden lg:flex items-center justify-end px-10 pt-6 pb-0">
           <Link
             href="/portal/notifications"
-            className="relative flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground transition-colors"
-            title="Notifications"
+            className="relative p-2 rounded-xl bg-card hover:bg-accent transition-colors border border-primary/5"
           >
-            <Bell className="h-4 w-4" />
+            <span className="material-symbols-outlined text-muted-foreground text-2xl">notifications</span>
             {unreadCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
+              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#6961ff] ring-2 ring-card" />
             )}
           </Link>
-        </header>
+        </div>
 
-        <main className="px-4 py-6 pb-20 lg:px-8 lg:pb-6">
+        <main className="px-5 py-6 pb-24 lg:px-10 lg:py-6 lg:pb-8">
           {children}
         </main>
       </div>
@@ -75,6 +88,7 @@ export function PortalShell({
       <PortalBottomNav
         pendingStrategies={pendingStrategies}
         pendingDeliverables={pendingDeliverables}
+        unansweredQuestions={unansweredQuestions}
       />
     </div>
   );

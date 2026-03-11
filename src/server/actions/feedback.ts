@@ -104,7 +104,23 @@ export async function addComment(formData: FormData): Promise<ActionResult<{ id:
       `Nouveau commentaire sur "${targetName}"`,
       `/portal/strategy/${strategyId}`,
     );
-  } else if (deliverableId) {
+  } else if (strategyItemId) {
+    // Comment on a strategyItem only — look up parent strategy for notification
+    const parentItem = await prisma.strategyItem.findUnique({
+      where: { id: strategyItemId },
+      select: { strategyId: true },
+    });
+    if (parentItem) {
+      await notifyCommentParties(
+        session.user.id,
+        "strategy",
+        parentItem.strategyId,
+        `Nouveau commentaire sur "${targetName}"`,
+        `/portal/strategy/${parentItem.strategyId}`,
+      );
+    }
+  }
+  if (deliverableId) {
     await notifyCommentParties(
       session.user.id,
       "deliverable",

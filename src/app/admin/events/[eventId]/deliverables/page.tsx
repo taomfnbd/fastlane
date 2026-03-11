@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { DeadlineBadge } from "@/components/shared/deadline-badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Package } from "lucide-react";
+import { Package, Paperclip } from "lucide-react";
 import Link from "next/link";
 import { CreateDeliverableDialog } from "@/components/admin/create-deliverable-dialog";
 import { DeliverableListActions } from "@/components/admin/deliverable-list-actions";
@@ -64,9 +65,19 @@ export default async function EventDeliverablesPage({
                   className="min-w-0 flex-1"
                 >
                   <p className="text-sm font-medium truncate">{d.title}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {d.type.replace(/_/g, " ").toLowerCase()} · v{d.version}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[11px] text-muted-foreground">
+                      {d.type.replace(/_/g, " ").toLowerCase()} · v{d.version}
+                    </p>
+                    {d.fileName && (
+                      <span className="flex items-center gap-0.5 text-[11px] text-primary">
+                        <Paperclip className="h-3 w-3" />
+                      </span>
+                    )}
+                    {d.dueDate && (
+                      <DeadlineBadge dueDate={d.dueDate} status={d.status} />
+                    )}
+                  </div>
                 </Link>
                 <StatusBadge status={d.status} />
                 <DeliverableListActions deliverableId={d.id} status={d.status} />

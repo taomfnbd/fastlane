@@ -7,22 +7,27 @@ import { InviteUserDialog } from "@/components/admin/invite-user-dialog";
 import { UserActions } from "@/components/admin/user-actions";
 import { Pagination } from "@/components/shared/pagination";
 import { SearchInput } from "@/components/shared/search-input";
+import { UsersRoleFilter } from "@/components/admin/users-role-filter";
 
 export const metadata = { title: "Utilisateurs" };
 
 const roleDot: Record<string, string> = { SUPER_ADMIN: "bg-purple-500", ADMIN: "bg-blue-500", CLIENT_ADMIN: "bg-emerald-500", CLIENT_MEMBER: "bg-muted-foreground/50" };
 const roleLabel: Record<string, string> = { SUPER_ADMIN: "super admin", ADMIN: "admin", CLIENT_ADMIN: "admin client", CLIENT_MEMBER: "membre client" };
 
+const ROLES = ["SUPER_ADMIN", "ADMIN", "CLIENT_ADMIN", "CLIENT_MEMBER"] as const;
+
 export default async function UsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; q?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; role?: string }>;
 }) {
   await requireAdmin();
-  const { page = "1", q } = await searchParams;
+  const { page = "1", q, role } = await searchParams;
   const currentPage = Math.max(1, Number(page));
   const perPage = 10;
-  const where = q ? { OR: [{ name: { contains: q, mode: "insensitive" as const } }, { email: { contains: q, mode: "insensitive" as const } }] } : {};
+  const where: Record<string, unknown> = {};
+  if (q) where.OR = [{ name: { contains: q, mode: "insensitive" as const } }, { email: { contains: q, mode: "insensitive" as const } }];
+  if (role && ROLES.includes(role as (typeof ROLES)[number])) where.role = role;
 
   const [users, companies, totalCount] = await Promise.all([
     prisma.user.findMany({
@@ -39,7 +44,12 @@ export default async function UsersPage({
   return (
     <div className="space-y-4">
       <PageHeader title="Utilisateurs" action={<InviteUserDialog />} />
-      <SearchInput basePath="/admin/users" placeholder="Rechercher un utilisateur..." />
+      <div className="flex items-center gap-3">
+        <div className="flex-1">
+          <SearchInput basePath="/admin/users" placeholder="Rechercher un utilisateur..." />
+        </div>
+        <UsersRoleFilter />
+      </div>
       {users.length === 0 ? (
         <EmptyState icon={Users} title="Aucun utilisateur" description="Invitez des utilisateurs." action={<InviteUserDialog />} />
       ) : (

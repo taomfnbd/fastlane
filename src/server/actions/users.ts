@@ -107,6 +107,11 @@ export async function updateUserRole(
     data: { role: parsed.data.role },
   });
 
+  // Invalidate all sessions for the user so new role takes effect immediately
+  await prisma.session.deleteMany({
+    where: { userId: parsed.data.userId },
+  });
+
   revalidatePath("/admin/users");
 
   return { success: true, data: undefined };

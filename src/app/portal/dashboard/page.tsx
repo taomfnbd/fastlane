@@ -1,13 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireClient } from "@/lib/auth-server";
 import { relativeTime } from "@/lib/utils";
-import {
-  Target,
-  Calendar,
-  Clock,
-  ChevronRight,
-  CheckCircle2,
-} from "lucide-react";
 import Link from "next/link";
 
 export const metadata = { title: "Accueil" };
@@ -61,14 +54,12 @@ export default async function PortalDashboardPage() {
 
   const companyName = company?.name ?? "Entreprise";
 
-  // Find the active (or most recent) event for the badge
   const activeEc = eventCompanies.find(
     (ec) => ec.event.status === "ACTIVE" || ec.event.status === "REVIEW"
   ) ?? eventCompanies[0];
 
   const now = new Date();
 
-  // Event timing calculations
   let daysElapsed = 0;
   let totalDays = 1;
   let daysRemaining = 0;
@@ -95,16 +86,17 @@ export default async function PortalDashboardPage() {
     );
   }
 
-  // Aggregate counts across all event companies
   let totalDeliverables = 0;
   let validatedDeliverables = 0;
   let pendingStrategies = 0;
-  let lastDeliverableUpdate: Date | null = null;
+
+  const actionItems: { kind: "strategy" | "deliverable"; id: string; title: string; status: string; updatedAt: Date }[] = [];
 
   for (const ec of eventCompanies) {
     for (const s of ec.strategies) {
       if (s.status === "PENDING_REVIEW" || s.status === "REVISED") {
         pendingStrategies++;
+        actionItems.push({ kind: "strategy", id: s.id, title: s.title, status: s.status, updatedAt: s.updatedAt });
       }
     }
     for (const d of ec.deliverables) {
@@ -112,18 +104,19 @@ export default async function PortalDashboardPage() {
       if (d.status === "APPROVED" || d.status === "DELIVERED") {
         validatedDeliverables++;
       }
-      if (!lastDeliverableUpdate || d.updatedAt > lastDeliverableUpdate) {
-        lastDeliverableUpdate = d.updatedAt;
+      if (d.status === "IN_REVIEW" || d.status === "REVISED") {
+        actionItems.push({ kind: "deliverable", id: d.id, title: d.title, status: d.status, updatedAt: d.updatedAt });
       }
     }
   }
+
+  actionItems.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   const progressPercent =
     totalDeliverables > 0
       ? Math.round((validatedDeliverables / totalDeliverables) * 100)
       : 0;
 
-  // Build activity items with hrefs
   const activityItems = activities.map((activity) => {
     const isTeam =
       activity.user.role === "SUPER_ADMIN" || activity.user.role === "ADMIN";
@@ -135,13 +128,18 @@ export default async function PortalDashboardPage() {
       href = `/portal/deliverables/${activity.deliverable.id}`;
     }
 
-    // Color based on recency
     const hoursAgo =
       (now.getTime() - new Date(activity.createdAt).getTime()) /
       (1000 * 60 * 60);
     let dotColor = "bg-muted-foreground/40";
-    if (hoursAgo < 2) dotColor = "bg-amber-500";
-    else if (hoursAgo < 24) dotColor = "bg-blue-500";
+    let dotGlow = "";
+    if (hoursAgo < 2) {
+      dotColor = "bg-amber-500";
+      dotGlow = "shadow-[0_0_8px_rgba(245,158,11,0.5)]";
+    } else if (hoursAgo < 24) {
+      dotColor = "bg-blue-500";
+      dotGlow = "shadow-[0_0_8px_rgba(59,130,246,0.5)]";
+    }
 
     return {
       id: activity.id,
@@ -149,23 +147,23 @@ export default async function PortalDashboardPage() {
       time: activity.createdAt,
       href,
       dotColor,
+      dotGlow,
     };
   });
 
   return (
     <div className="animate-fade-up space-y-6">
-      {/* Desktop: 2-column layout */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left column: 2/3 */}
+        {/* Left column */}
         <div className="space-y-6 lg:col-span-2">
           {/* Greeting + Event badge */}
           <div className="space-y-3">
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Bonjour,{" "}
-              <span className="text-primary">{companyName}</span>
+              <span className="text-[#6961ff]">{companyName}</span>
             </h1>
             {activeEc && (
-              <div className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
+              <div className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-[#6961ff] border border-primary/20">
                 {eventName} — Jour {daysElapsed} sur {totalDays}
               </div>
             )}
@@ -173,113 +171,127 @@ export default async function PortalDashboardPage() {
 
           {/* Progress card */}
           {totalDeliverables > 0 && (
-            <div className="rounded-xl border border-border/50 bg-card p-6">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Validation des livrables
-              </p>
-              <div className="mt-3 flex items-baseline justify-between">
-                <p className="text-sm text-foreground">
-                  {validatedDeliverables} livrable
-                  {validatedDeliverables > 1 ? "s" : ""} valid&eacute;
-                  {validatedDeliverables > 1 ? "s" : ""} sur{" "}
-                  {totalDeliverables}
-                </p>
-                <span className="text-2xl font-bold text-primary">
+            <div className="bg-card rounded-2xl p-6 lg:p-8 shadow-portal-card border border-primary/5">
+              <div className="flex justify-between items-end mb-6">
+                <div>
+                  <h3 className="text-muted-foreground text-xs lg:text-sm font-semibold uppercase tracking-wider mb-2">
+                    Validation des livrables
+                  </h3>
+                  <p className="text-xl lg:text-2xl font-bold text-foreground">
+                    {validatedDeliverables} livrable{validatedDeliverables > 1 ? "s" : ""} valid&eacute;{validatedDeliverables > 1 ? "s" : ""} sur {totalDeliverables}
+                  </p>
+                </div>
+                <div className="text-amber-500 font-bold text-3xl lg:text-4xl">
                   {progressPercent}%
-                </span>
+                </div>
               </div>
-              {/* Progress bar */}
-              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="w-full h-3 lg:h-4 bg-muted rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-amber-500 transition-all duration-500"
+                  className="h-full bg-amber-500 rounded-full custom-glow transition-all duration-500"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
-              {lastDeliverableUpdate && (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Derni&egrave;re mise &agrave; jour{" "}
-                  {relativeTime(lastDeliverableUpdate)}
-                </p>
-              )}
+            </div>
+          )}
+
+          {/* Actions requises */}
+          {actionItems.length > 0 && (
+            <div className="bg-card rounded-2xl p-6 shadow-portal-card border border-amber-500/20">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  Actions requises ({actionItems.length})
+                </h3>
+              </div>
+              <div className="space-y-2">
+                {actionItems.slice(0, 5).map((item) => (
+                  <Link
+                    key={`${item.kind}-${item.id}`}
+                    href={item.kind === "strategy" ? `/portal/strategy/${item.id}` : `/portal/deliverables/${item.id}`}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-background border border-primary/5 hover:shadow-md transition-all group"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-amber-500 text-base">
+                        {item.kind === "strategy" ? "pending_actions" : "description"}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate group-hover:text-[#6961ff] transition-colors">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.kind === "strategy" ? "Stratégie" : "Livrable"} · {relativeTime(item.updatedAt)}
+                      </p>
+                    </div>
+                    <span className="material-symbols-outlined text-muted-foreground/30 group-hover:text-[#6961ff] transition-colors">chevron_right</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Stats cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
             {/* Strategies pending */}
-            <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-card p-5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <Target className="h-5 w-5 text-primary" />
+            <div className="bg-card p-6 rounded-2xl shadow-portal-card border border-primary/5 flex flex-row sm:flex-col items-center sm:text-center gap-4 sm:gap-0 justify-between sm:justify-start">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center sm:mb-4 shrink-0">
+                <span className="material-symbols-outlined text-[#6961ff] text-2xl">pending_actions</span>
               </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Strat&eacute;gies en attente
-                </p>
-                <p className="mt-1 text-2xl font-bold text-foreground">
-                  {pendingStrategies}
-                </p>
+              <div className="text-right sm:text-center">
+                <span className="block text-2xl lg:text-3xl font-bold text-foreground">{pendingStrategies}</span>
+                <span className="text-[10px] lg:text-xs uppercase text-muted-foreground font-bold tracking-wider mt-1 block">Stratégies en attente</span>
               </div>
             </div>
 
             {/* Deliverables submitted */}
-            <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-card p-5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="bg-card p-6 rounded-2xl shadow-portal-card border border-primary/5 flex flex-row sm:flex-col items-center sm:text-center gap-4 sm:gap-0 justify-between sm:justify-start">
+              <div className="h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center sm:mb-4 shrink-0">
+                <span className="material-symbols-outlined text-emerald-500 text-2xl">check_circle</span>
               </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  D&eacute;livrables soumis
-                </p>
-                <p className="mt-1 text-2xl font-bold text-foreground">
-                  {validatedDeliverables}/{totalDeliverables}
-                </p>
+              <div className="text-right sm:text-center">
+                <span className="block text-2xl lg:text-3xl font-bold text-foreground">{validatedDeliverables}/{totalDeliverables}</span>
+                <span className="text-[10px] lg:text-xs uppercase text-muted-foreground font-bold tracking-wider mt-1 block">Délivrables soumis</span>
               </div>
             </div>
 
             {/* Days remaining */}
-            <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-card p-5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
-                <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="bg-card p-6 rounded-2xl shadow-portal-card border border-primary/5 flex flex-row sm:flex-col items-center sm:text-center gap-4 sm:gap-0 justify-between sm:justify-start">
+              <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center sm:mb-4 shrink-0">
+                <span className="material-symbols-outlined text-blue-500 text-2xl">calendar_month</span>
               </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Jours restants
-                </p>
-                <p className="mt-1 text-2xl font-bold text-foreground">
-                  {daysRemaining}
-                </p>
+              <div className="text-right sm:text-center">
+                <span className="block text-2xl lg:text-3xl font-bold text-foreground">{daysRemaining}</span>
+                <span className="text-[10px] lg:text-xs uppercase text-muted-foreground font-bold tracking-wider mt-1 block">Jours restants</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right column: 1/3 - Activity */}
+        {/* Right column: Activity */}
         <div className="lg:col-span-1">
-          <div className="rounded-xl border border-border/50 bg-card p-6">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
+          <div className="bg-card rounded-2xl p-6 shadow-portal-card border border-primary/5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="material-symbols-outlined text-muted-foreground text-lg">schedule</span>
               <h2 className="text-sm font-semibold text-foreground">
-                Activit&eacute; r&eacute;cente
+                Activité récente
               </h2>
             </div>
 
             {activityItems.length > 0 ? (
-              <div className="mt-4 space-y-1">
+              <div className="space-y-2">
                 {activityItems.map((item) => {
                   const content = (
-                    <div className="group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-accent/50">
+                    <div className="group flex items-center gap-4 p-4 rounded-2xl bg-background border border-primary/5 hover:shadow-lg transition-all cursor-pointer">
                       <span
-                        className={`h-2 w-2 shrink-0 rounded-full ${item.dotColor}`}
+                        className={`h-3 w-3 shrink-0 rounded-full ${item.dotColor} ${item.dotGlow}`}
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm text-foreground">
+                        <p className="text-sm font-semibold text-foreground truncate group-hover:text-[#6961ff] transition-colors">
                           {item.title}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {relativeTime(item.time)}
                         </p>
                       </div>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                      <span className="material-symbols-outlined text-muted-foreground/30 group-hover:text-[#6961ff] transition-colors">chevron_right</span>
                     </div>
                   );
 
@@ -294,8 +306,8 @@ export default async function PortalDashboardPage() {
                 })}
               </div>
             ) : (
-              <p className="mt-4 text-sm text-muted-foreground">
-                Aucune activit&eacute; pour le moment.
+              <p className="text-sm text-muted-foreground">
+                Aucune activité pour le moment.
               </p>
             )}
           </div>

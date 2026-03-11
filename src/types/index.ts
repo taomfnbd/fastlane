@@ -43,12 +43,14 @@ export const createStrategySchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   description: z.string().max(2000).optional(),
   eventCompanyId: z.string().cuid(),
+  dueDate: z.string().optional(),
 });
 
 export const updateStrategySchema = z.object({
   id: z.string().cuid(),
   title: z.string().min(1, "Title is required").max(200),
   description: z.string().max(2000).optional(),
+  dueDate: z.string().optional(),
 });
 
 export const createStrategyItemSchema = z.object({
@@ -83,6 +85,7 @@ export const createDeliverableSchema = z.object({
     "OTHER",
   ]),
   eventCompanyId: z.string().cuid(),
+  dueDate: z.string().optional(),
 });
 
 export const updateDeliverableSchema = z.object({
@@ -99,6 +102,7 @@ export const updateDeliverableSchema = z.object({
     "OTHER",
   ]),
   content: z.string().max(50000).optional(),
+  dueDate: z.string().optional(),
 });
 
 // ==================== Comment Schemas ====================
