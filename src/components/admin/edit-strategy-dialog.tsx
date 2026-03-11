@@ -11,7 +11,15 @@ import { toast } from "sonner";
 import { updateStrategy } from "@/server/actions/strategy";
 
 interface EditStrategyDialogProps {
-  strategy: { id: string; title: string; description: string | null };
+  strategy: { id: string; title: string; description: string | null; dueDate: string | null };
+}
+
+function toLocalDatetime(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const offset = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - offset * 60000);
+  return local.toISOString().slice(0, 16);
 }
 
 export function EditStrategyDialog({ strategy }: EditStrategyDialogProps) {
@@ -52,6 +60,10 @@ export function EditStrategyDialog({ strategy }: EditStrategyDialogProps) {
           <div className="space-y-2">
             <Label htmlFor="edit-strategy-desc">Description</Label>
             <Textarea id="edit-strategy-desc" name="description" defaultValue={strategy.description ?? ""} rows={3} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-strategy-due">Echeance</Label>
+            <Input id="edit-strategy-due" name="dueDate" type="datetime-local" defaultValue={toLocalDatetime(strategy.dueDate)} />
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Annuler</Button>

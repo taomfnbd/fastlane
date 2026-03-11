@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { DeadlineBadge } from "@/components/shared/deadline-badge";
 import { CommentSection } from "@/components/shared/comment-section";
 import { QuestionSection } from "@/components/shared/question-section";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
@@ -11,7 +12,8 @@ import { ResubmitButton } from "@/components/admin/resubmit-button";
 import { MarkDeliveredButton } from "@/components/admin/mark-delivered-button";
 import { SubmitDeliverableButton } from "@/components/admin/submit-deliverable-button";
 import { Button } from "@/components/ui/button";
-import { FileText, Download } from "lucide-react";
+import { ActivityTimeline } from "@/components/shared/activity-timeline";
+import { FileText, Download, ExternalLink } from "lucide-react";
 import { relativeTime } from "@/lib/utils";
 
 export default async function AdminDeliverableDetailPage({
@@ -69,7 +71,7 @@ export default async function AdminDeliverableDetailPage({
       <div>
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-semibold tracking-tight">{deliverable.title}</h1>
-          <EditDeliverableDialog deliverable={{ id: deliverable.id, title: deliverable.title, description: deliverable.description, type: deliverable.type, content: deliverable.content }} />
+          <EditDeliverableDialog deliverable={{ id: deliverable.id, title: deliverable.title, description: deliverable.description, type: deliverable.type, content: deliverable.content, dueDate: deliverable.dueDate?.toISOString() ?? null }} />
         </div>
         {deliverable.description && <p className="text-sm text-muted-foreground mt-0.5">{deliverable.description}</p>}
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
@@ -78,11 +80,25 @@ export default async function AdminDeliverableDetailPage({
           <span>{deliverable.type.replace(/_/g, " ").toLowerCase()}</span>
           <span>v{deliverable.version}</span>
           <span>Mis a jour {relativeTime(deliverable.updatedAt)}</span>
+          {deliverable.dueDate && (
+            <DeadlineBadge dueDate={deliverable.dueDate} status={deliverable.status} />
+          )}
         </div>
-        <div className="flex gap-2 mt-2">
+        <div className="flex items-center gap-2 mt-2">
           {deliverable.status === "DRAFT" && <SubmitDeliverableButton deliverableId={deliverable.id} />}
           {deliverable.status === "CHANGES_REQUESTED" && <ResubmitButton id={deliverable.id} type="deliverable" />}
           {deliverable.status === "APPROVED" && <MarkDeliveredButton deliverableId={deliverable.id} />}
+          {deliverable.status !== "DRAFT" && (
+            <a
+              href={`/portal/deliverables/${deliverable.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors ml-auto"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Vue client
+            </a>
+          )}
         </div>
       </div>
 
@@ -129,6 +145,8 @@ export default async function AdminDeliverableDetailPage({
           />
         </div>
       </div>
+
+      <ActivityTimeline deliverableId={deliverable.id} />
     </DetailPanel>
   );
 }

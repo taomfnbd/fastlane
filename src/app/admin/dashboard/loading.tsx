@@ -4,9 +4,9 @@ export default function DashboardLoading() {
       {/* Page header */}
       <div className="h-7 w-48 rounded bg-muted animate-pulse" />
 
-      {/* 4 stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+      {/* 5 stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="rounded-lg border bg-background p-4 space-y-3">
             <div className="h-3 w-24 rounded bg-muted animate-pulse" />
             <div className="h-7 w-12 rounded bg-muted animate-pulse" />

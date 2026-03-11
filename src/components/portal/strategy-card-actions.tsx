@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -12,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Check, X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { approveAllStrategyItems, rejectStrategy } from "@/server/actions/strategy";
 
 interface StrategyCardActionsProps {
@@ -30,8 +29,8 @@ export function StrategyCardActions({ strategyId }: StrategyCardActionsProps) {
       const result = await approveAllStrategyItems(strategyId);
       if (result.success) {
         setResolved("approved");
-        toast.success("Strategie validee", {
-          description: "L'equipe Fastlane a ete notifiee",
+        toast.success("Stratégie validée", {
+          description: "L'équipe Fastlane a été notifiée",
         });
       } else {
         toast.error("Erreur", { description: result.error });
@@ -48,8 +47,8 @@ export function StrategyCardActions({ strategyId }: StrategyCardActionsProps) {
         setResolved("rejected");
         setRejectOpen(false);
         setRejectReason("");
-        toast("Modifications demandees", {
-          description: "Votre commentaire a ete envoye a l'equipe",
+        toast("Modifications demandées", {
+          description: "Votre commentaire a été envoyé à l'équipe",
         });
       } else {
         toast.error("Erreur", { description: result.error });
@@ -59,88 +58,83 @@ export function StrategyCardActions({ strategyId }: StrategyCardActionsProps) {
 
   if (resolved === "approved") {
     return (
-      <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 animate-fade-up">
-        <Check className="h-3.5 w-3.5" />
-        Validee
+      <div className="flex items-center gap-2 text-xs text-emerald-400 animate-fade-up">
+        <span className="material-symbols-outlined text-lg">check_circle</span>
+        Validée
       </div>
     );
   }
 
   if (resolved === "rejected") {
     return (
-      <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 animate-fade-up">
-        <X className="h-3.5 w-3.5" />
-        Modifications demandees
+      <div className="flex items-center gap-2 text-xs text-red-400 animate-fade-up">
+        <span className="material-symbols-outlined text-lg">cancel</span>
+        Modifications demandées
       </div>
     );
   }
 
   return (
     <>
-      <div className="flex gap-2 pt-1">
-        <Button
-          size="sm"
+      <div className="grid grid-cols-2 gap-3 pt-2">
+        <button
           onClick={handleApprove}
           disabled={isPending}
-          className="flex-1"
+          className="flex items-center justify-center gap-2 h-11 bg-[#6961ff] hover:bg-[#6961ff]/90 text-white rounded-full font-bold text-sm transition-colors disabled:opacity-50"
         >
           {isPending ? (
-            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Check className="mr-1.5 h-3.5 w-3.5" />
+            <span className="material-symbols-outlined text-lg">check_circle</span>
           )}
           Valider
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex-1 text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20"
+        </button>
+        <button
           onClick={() => setRejectOpen(true)}
           disabled={isPending}
+          className="flex items-center justify-center gap-2 h-11 border-2 border-red-500/30 hover:border-red-500 text-red-500 rounded-full font-bold text-sm transition-colors disabled:opacity-50"
         >
           {isPending ? (
-            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <X className="mr-1.5 h-3.5 w-3.5" />
+            <span className="material-symbols-outlined text-lg">cancel</span>
           )}
           Refuser
-        </Button>
+        </button>
       </div>
 
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Refuser la strategie</DialogTitle>
+            <DialogTitle>Refuser la stratégie</DialogTitle>
             <DialogDescription>
-              Expliquez les modifications souhaitees. Ce commentaire sera visible
-              par l&apos;equipe.
+              Expliquez les modifications souhaitées. Ce commentaire sera visible
+              par l&apos;équipe.
             </DialogDescription>
           </DialogHeader>
           <Textarea
-            placeholder="Decrivez les modifications attendues..."
+            placeholder="Décrivez les modifications attendues..."
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
             rows={4}
             className="resize-none"
           />
           <DialogFooter>
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={() => setRejectOpen(false)}
               disabled={isPending}
+              className="px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Annuler
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
+            </button>
+            <button
               onClick={handleRejectConfirm}
               disabled={isPending || !rejectReason.trim()}
+              className="px-4 py-2 rounded-full bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors disabled:opacity-50"
             >
-              {isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              {isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin inline" />}
               Confirmer
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

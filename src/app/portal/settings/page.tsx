@@ -1,84 +1,91 @@
-import { requireClient } from "@/lib/auth-server";
+import { requireClient, getUserWithRole } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { SettingsCompanyForm } from "@/components/portal/settings-company-form";
+import { SettingsTeamSection } from "@/components/portal/settings-team-section";
+import { ChangePasswordForm } from "@/components/portal/change-password-form";
 
 export const metadata = { title: "Parametres" };
-
-const roleDot: Record<string, string> = {
-  CLIENT_ADMIN: "bg-emerald-500",
-  CLIENT_MEMBER: "bg-muted-foreground/50",
-};
 
 export default async function PortalSettingsPage() {
   const session = await requireClient();
 
-  const company = await prisma.company.findUnique({
-    where: { id: session.companyId },
-    include: {
-      users: {
-        select: { id: true, name: true, email: true, role: true },
-        orderBy: { createdAt: "asc" },
+  const [company, currentUser] = await Promise.all([
+    prisma.company.findUnique({
+      where: { id: session.companyId },
+      include: {
+        users: {
+          select: { id: true, name: true, email: true, role: true },
+          orderBy: { createdAt: "asc" },
+        },
       },
-    },
-  });
+    }),
+    getUserWithRole(session.user.id),
+  ]);
 
-  if (!company) return null;
+  if (!company || !currentUser) return null;
+
+  const isAdmin = currentUser.role === "CLIENT_ADMIN";
 
   return (
     <div className="space-y-8 animate-fade-up">
       <div className="space-y-1">
         <h1 className="text-xl font-semibold tracking-tight">Parametres</h1>
+        <p className="text-sm text-muted-foreground">
+          Gerez votre entreprise et votre equipe
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Company info */}
-        <div>
-          <h2 className="text-sm font-medium mb-3">Entreprise</h2>
-          <div className="rounded-xl border divide-y">
-            <div className="px-3 py-2.5 flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Nom</span>
-              <span className="text-sm font-medium">{company.name}</span>
-            </div>
-            {company.industry && (
-              <div className="px-3 py-2.5 flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Secteur</span>
-                <span className="text-sm">{company.industry}</span>
-              </div>
-            )}
-            {company.website && (
-              <div className="px-3 py-2.5 flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Site web</span>
-                <span className="text-sm">{company.website}</span>
-              </div>
-            )}
-            <div className="px-3 py-2.5 flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Plan</span>
+        <SettingsCompanyForm
+          company={{
+            name: company.name,
+            website: company.website ?? "",
+            industry: company.industry ?? "",
+          }}
+          isAdmin={isAdmin}
+        />
+
+        {/* Team members */}
+        <SettingsTeamSection
+          users={company.users.map((u) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role as "CLIENT_ADMIN" | "CLIENT_MEMBER",
+          }))}
+          currentUserId={session.user.id}
+          isAdmin={isAdmin}
+        />
+      </div>
+
+      {/* Security */}
+      <div>
+        <h2 className="text-sm font-medium mb-3 flex items-center gap-2">
+          <span className="material-symbols-outlined text-base text-muted-foreground">lock</span>
+          Securite
+        </h2>
+        <div className="bg-card rounded-xl border border-primary/5 p-6">
+          <ChangePasswordForm />
+        </div>
+      </div>
+
+      {/* Plan info */}
+      <div>
+        <h2 className="text-sm font-medium mb-3 flex items-center gap-2">
+          <span className="material-symbols-outlined text-base text-muted-foreground">credit_card</span>
+          Plan
+        </h2>
+        <div className="bg-card rounded-xl border border-primary/5 p-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Plan actuel</p>
               <StatusBadge status={company.plan} />
             </div>
-          </div>
-        </div>
-
-        {/* Team */}
-        <div>
-          <h2 className="text-sm font-medium mb-3">Equipe ({company.users.length})</h2>
-          <div className="rounded-xl border divide-y">
-            {company.users.map((user) => (
-              <div key={user.id} className="flex items-center justify-between px-3 py-2.5">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{user.name}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
-                  </div>
-                </div>
-                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-                  <span className={`h-1.5 w-1.5 rounded-full ${roleDot[user.role] ?? "bg-muted-foreground/50"}`} />
-                  {user.role === "CLIENT_ADMIN" ? "admin" : "membre"}
-                </span>
-              </div>
-            ))}
+            <p className="text-xs text-muted-foreground max-w-48 text-right">
+              Contactez Fastlane pour modifier votre plan.
+            </p>
           </div>
         </div>
       </div>

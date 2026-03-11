@@ -3,7 +3,8 @@ import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ProgressBar } from "@/components/shared/progress-bar";
-import { Calendar, Building2, Package, Target, MessageCircleQuestion, Send, Check, XCircle, MessageSquare, FileUp, RefreshCw } from "lucide-react";
+import { DeadlineBadge } from "@/components/shared/deadline-badge";
+import { Calendar, Building2, Package, Target, MessageCircleQuestion, AlertTriangle, Send, Check, XCircle, MessageSquare, FileUp, RefreshCw } from "lucide-react";
 import { cn, relativeTime } from "@/lib/utils";
 import Link from "next/link";
 
@@ -13,11 +14,14 @@ export default async function AdminDashboardPage() {
   await requireAdmin();
 
   // 9 queries instead of 12+ — groupBy replaces 3 individual count() calls each
+  const now = new Date();
+
   const [
     activeEventsCount,
     totalCompanies,
     deliverablesByStatus,
     strategiesByStatus,
+    overdueCount,
     activeEvents,
     pendingStrats,
     pendingDelivs,
@@ -28,6 +32,10 @@ export default async function AdminDashboardPage() {
     prisma.company.count(),
     prisma.deliverable.groupBy({ by: ["status"], _count: true }),
     prisma.strategy.groupBy({ by: ["status"], _count: true }),
+    Promise.all([
+      prisma.strategy.count({ where: { dueDate: { lt: now }, status: { notIn: ["APPROVED"] } } }),
+      prisma.deliverable.count({ where: { dueDate: { lt: now }, status: { notIn: ["APPROVED", "DELIVERED"] } } }),
+    ]).then(([s, d]) => s + d),
     prisma.event.findMany({
       where: { status: "ACTIVE" },
       orderBy: { startDate: "desc" },
@@ -110,22 +118,22 @@ export default async function AdminDashboardPage() {
   const delivProgress = totalDeliverables > 0 ? Math.round((approvedDeliverables / totalDeliverables) * 100) : 0;
   const stratProgress = totalStrategies > 0 ? Math.round((approvedStrategies / totalStrategies) * 100) : 0;
 
-  const stats = [
+  const stats: { label: string; value: number; icon: typeof Calendar; href: string; progress?: number; subText?: string }[] = [
     {
       label: "Evenements actifs",
       value: activeEventsCount,
       icon: Calendar,
       href: "/admin/events",
-      progress: undefined as number | undefined,
-      subText: undefined as string | undefined,
+      progress: undefined,
+      subText: undefined,
     },
     {
       label: "Entreprises",
       value: totalCompanies,
       icon: Building2,
       href: "/admin/companies",
-      progress: undefined as number | undefined,
-      subText: undefined as string | undefined,
+      progress: undefined,
+      subText: undefined,
     },
     {
       label: "Livrables en attente",
@@ -148,8 +156,16 @@ export default async function AdminDashboardPage() {
       value: unansweredQuestions.length,
       icon: MessageCircleQuestion,
       href: "/admin/dashboard#questions",
-      progress: undefined as number | undefined,
-      subText: undefined as string | undefined,
+      progress: undefined,
+      subText: undefined,
+    },
+    {
+      label: "En retard",
+      value: overdueCount,
+      icon: AlertTriangle,
+      href: "/admin/strategies?status=all",
+      progress: undefined,
+      subText: overdueCount > 0 ? "Echeance depassee" : undefined,
     },
   ];
 
@@ -164,6 +180,7 @@ export default async function AdminDashboardPage() {
       eventId: s.eventCompany.event.id,
       updatedAt: s.updatedAt,
       companyId: s.eventCompany.companyId,
+      dueDate: s.dueDate,
     })),
     ...pendingDelivs.map((d) => ({
       kind: "deliverable" as const,
@@ -175,10 +192,57 @@ export default async function AdminDashboardPage() {
       eventId: d.eventCompany.event.id,
       updatedAt: d.updatedAt,
       companyId: d.eventCompany.companyId,
+      dueDate: d.dueDate,
     })),
   ]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 10);
+
+  // Group: items waiting for client action vs items admin needs to fix
+  const waitingForClient = allActionItems.filter((i) => i.status === "PENDING_REVIEW" || i.status === "IN_REVIEW");
+  const needsAdminAction = allActionItems.filter((i) => i.status === "CHANGES_REQUESTED");
+
+  function ActionItem({ item }: { item: typeof allActionItems[number] }) {
+    return (
+      <Link
+        href={
+          item.kind === "strategy"
+            ? `/admin/events/${item.eventId}/strategy/${item.id}`
+            : `/admin/events/${item.eventId}/deliverables/${item.id}`
+        }
+        className="flex items-start gap-3 px-3 py-2.5 hover:bg-accent/50 transition-colors"
+      >
+        <div
+          className={cn(
+            "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+            item.status === "CHANGES_REQUESTED" ? "bg-red-500" : "bg-amber-500"
+          )}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-medium truncate">{item.title}</p>
+            <span className="shrink-0 text-[10px] text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">
+              {item.kind === "strategy" ? "strategie" : "livrable"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-[11px] text-muted-foreground">
+              {item.company} · {item.event}
+            </p>
+            {item.dueDate && (
+              <DeadlineBadge dueDate={item.dueDate} status={item.status} />
+            )}
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <StatusBadge status={item.status} />
+          <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+            {relativeTime(item.updatedAt)}
+          </p>
+        </div>
+      </Link>
+    );
+  }
 
   const activityIcons: Record<string, typeof Calendar> = {
     STRATEGY_CREATED: Target,
@@ -200,12 +264,15 @@ export default async function AdminDashboardPage() {
       <PageHeader title="Tableau de bord" />
 
       {/* Stats - clickable cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         {stats.map((stat) => (
           <Link
             key={stat.label}
             href={stat.href}
-            className="rounded-lg border bg-background p-4 space-y-3 hover:bg-accent/30 transition-colors cursor-pointer"
+            className={cn(
+              "rounded-lg border bg-background p-4 space-y-3 hover:bg-accent/30 transition-colors cursor-pointer",
+              stat.label === "En retard" && stat.value > 0 && "border-red-200 dark:border-red-900/50"
+            )}
           >
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <stat.icon className="h-3.5 w-3.5" />
@@ -237,42 +304,31 @@ export default async function AdminDashboardPage() {
               Aucun element en attente
             </p>
           ) : (
-            <div className="rounded-md border divide-y">
-              {allActionItems.map((item) => (
-                <Link
-                  key={`${item.kind}-${item.id}`}
-                  href={
-                    item.kind === "strategy"
-                      ? `/admin/events/${item.eventId}/strategy?company=${item.companyId}`
-                      : `/admin/events/${item.eventId}/deliverables?company=${item.companyId}`
-                  }
-                  className="flex items-start gap-3 px-3 py-2.5 hover:bg-accent/50 transition-colors"
-                >
-                  <div
-                    className={cn(
-                      "mt-1.5 h-2 w-2 shrink-0 rounded-full",
-                      item.status === "CHANGES_REQUESTED" ? "bg-red-500" : "bg-amber-500"
-                    )}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-medium truncate">{item.title}</p>
-                      <span className="shrink-0 text-[10px] text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">
-                        {item.kind === "strategy" ? "strategie" : "livrable"}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      {item.company} · {item.event}
-                    </p>
+            <div className="space-y-3">
+              {needsAdminAction.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-medium text-red-600 uppercase tracking-wide mb-1.5 px-1">
+                    A corriger ({needsAdminAction.length})
+                  </p>
+                  <div className="rounded-md border border-red-200 dark:border-red-900/50 divide-y">
+                    {needsAdminAction.map((item) => (
+                      <ActionItem key={`${item.kind}-${item.id}`} item={item} />
+                    ))}
                   </div>
-                  <div className="shrink-0 text-right">
-                    <StatusBadge status={item.status} />
-                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                      {relativeTime(item.updatedAt)}
-                    </p>
+                </div>
+              )}
+              {waitingForClient.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-medium text-amber-600 uppercase tracking-wide mb-1.5 px-1">
+                    En attente client ({waitingForClient.length})
+                  </p>
+                  <div className="rounded-md border divide-y">
+                    {waitingForClient.map((item) => (
+                      <ActionItem key={`${item.kind}-${item.id}`} item={item} />
+                    ))}
                   </div>
-                </Link>
-              ))}
+                </div>
+              )}
             </div>
           )}
         </div>

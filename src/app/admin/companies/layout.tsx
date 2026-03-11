@@ -7,5 +7,5 @@ export default function CompaniesLayout({
   children: React.ReactNode;
   detail: React.ReactNode;
 }) {
-  return <SplitViewLayout list={children} detail={detail} />;
+  return <SplitViewLayout list={children} detail={detail} basePath="/admin/companies" />;
 }

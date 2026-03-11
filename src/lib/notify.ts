@@ -1,4 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { sendNotificationEmail } from "@/lib/email";
+
+function fireEmails(users: { email: string }[], title: string, message: string, link?: string) {
+  for (const user of users) {
+    void sendNotificationEmail(user.email, title, message, link);
+  }
+}
 
 /**
  * Notify all ADMIN / SUPER_ADMIN users of the tenant that owns the eventCompany.
@@ -11,7 +18,7 @@ export async function notifyAdmins(
 ) {
   const admins = await prisma.user.findMany({
     where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
-    select: { id: true },
+    select: { id: true, email: true },
   });
 
   if (admins.length === 0) return;
@@ -24,6 +31,8 @@ export async function notifyAdmins(
       userId: u.id,
     })),
   });
+
+  fireEmails(admins, title, message, link);
 }
 
 /**
@@ -42,7 +51,7 @@ export async function notifyClientUsers(
         include: {
           users: {
             where: { role: { in: ["CLIENT_ADMIN", "CLIENT_MEMBER"] } },
-            select: { id: true },
+            select: { id: true, email: true },
           },
         },
       },
@@ -60,12 +69,46 @@ export async function notifyClientUsers(
       userId: u.id,
     })),
   });
+
+  fireEmails(clientUsers, title, message, link);
+}
+
+/**
+ * Notify CLIENT_ADMIN / CLIENT_MEMBER users of a company directly (no eventCompany lookup).
+ * Use when you only have a companyId, not an eventCompanyId.
+ */
+export async function notifyCompanyUsers(
+  companyId: string,
+  title: string,
+  message: string,
+  link?: string,
+) {
+  const clientUsers = await prisma.user.findMany({
+    where: {
+      companyId,
+      role: { in: ["CLIENT_ADMIN", "CLIENT_MEMBER"] },
+    },
+    select: { id: true, email: true },
+  });
+
+  if (clientUsers.length === 0) return;
+
+  await prisma.notification.createMany({
+    data: clientUsers.map((u) => ({
+      title,
+      message,
+      link: link ?? null,
+      userId: u.id,
+    })),
+  });
+
+  fireEmails(clientUsers, title, message, link);
 }
 
 /**
  * When someone comments, notify the "other side":
- * - If author is client → notify admins
- * - If author is admin  → notify client users of the related company
+ * - If author is client -> notify admins
+ * - If author is admin  -> notify client users of the related company
  */
 export async function notifyCommentParties(
   authorId: string,

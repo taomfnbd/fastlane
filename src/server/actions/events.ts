@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/auth-server";
 import { createEventSchema, updateEventSchema } from "@/types";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/types";
+import { notifyCompanyUsers } from "@/lib/notify";
 
 export async function createEvent(formData: FormData): Promise<ActionResult<{ id: string }>> {
   const session = await requireAdmin();
@@ -71,7 +72,10 @@ export async function updateEvent(formData: FormData): Promise<ActionResult> {
     return { success: false, error: "End date must be after start date" };
   }
 
-  const existing = await prisma.event.findUnique({ where: { id }, select: { id: true } });
+  const existing = await prisma.event.findUnique({
+    where: { id },
+    select: { id: true, status: true },
+  });
   if (!existing) return { success: false, error: "Event not found" };
 
   await prisma.event.update({
@@ -85,9 +89,26 @@ export async function updateEvent(formData: FormData): Promise<ActionResult> {
     },
   });
 
+  // Notify all companies in this event when status changes
+  if (status && status !== existing.status) {
+    const eventCompanies = await prisma.eventCompany.findMany({
+      where: { eventId: id },
+      select: { companyId: true },
+    });
+    for (const ec of eventCompanies) {
+      await notifyCompanyUsers(
+        ec.companyId,
+        "Mise a jour evenement",
+        `L'evenement "${name}" est maintenant en statut ${status === "ACTIVE" ? "actif" : status === "COMPLETED" ? "termine" : status.toLowerCase()}.`,
+        "/portal/dashboard",
+      );
+    }
+  }
+
   revalidatePath("/admin/events");
   revalidatePath(`/admin/events/${id}`);
   revalidatePath("/admin/dashboard");
+  revalidatePath("/portal/dashboard");
 
   return { success: true, data: undefined };
 }
@@ -121,11 +142,25 @@ export async function addCompanyToEvent(
     return { success: false, error: "Company is already part of this event" };
   }
 
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { name: true },
+  });
+
   await prisma.eventCompany.create({
     data: { eventId, companyId },
   });
 
+  // Notify client users they've been added to the event
+  await notifyCompanyUsers(
+    companyId,
+    "Nouvel evenement",
+    `Votre entreprise a ete ajoutee a l'evenement "${event?.name ?? ""}".`,
+    "/portal/dashboard",
+  );
+
   revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath("/portal/dashboard");
 
   return { success: true, data: undefined };
 }

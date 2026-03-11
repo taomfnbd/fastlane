@@ -23,7 +23,7 @@ export default async function PortalLayout({
     redirect("/login");
   }
 
-  const [notifications, eventCompanies] = await Promise.all([
+  const [notifications, eventCompanies, unansweredQuestions] = await Promise.all([
     prisma.notification.findMany({
       where: { userId: session.user.id },
       take: 10,
@@ -51,6 +51,9 @@ export default async function PortalLayout({
         },
       },
     }),
+    prisma.question.count({
+      where: { targetCompanyId: user.company.id, answeredAt: null },
+    }),
   ]);
 
   const activeEvent = eventCompanies.find((ec) => ec.event.status === "ACTIVE");
@@ -65,19 +68,26 @@ export default async function PortalLayout({
   }));
 
   return (
-    <PortalShell
-      user={{
-        name: user.name,
-        email: user.email,
-      }}
-      companyName={user.company.name}
-      activeEventName={activeEvent?.event.name ?? null}
-      notifications={serializedNotifications}
-      unreadCount={unreadCount}
-      pendingStrategies={pendingStrategies}
-      pendingDeliverables={pendingDeliverables}
-    >
-      {children}
-    </PortalShell>
+    <>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+      />
+      <PortalShell
+        user={{
+          name: user.name,
+          email: user.email,
+        }}
+        companyName={user.company.name}
+        activeEventName={activeEvent?.event.name ?? null}
+        notifications={serializedNotifications}
+        unreadCount={unreadCount}
+        pendingStrategies={pendingStrategies}
+        pendingDeliverables={pendingDeliverables}
+        unansweredQuestions={unansweredQuestions}
+      >
+        {children}
+      </PortalShell>
+    </>
   );
 }

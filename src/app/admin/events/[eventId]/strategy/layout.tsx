@@ -1,11 +1,20 @@
 import { SplitViewLayout } from "@/components/shared/split-view-layout";
 
-export default function StrategyLayout({
+export default async function StrategyLayout({
   children,
   detail,
+  params,
 }: {
   children: React.ReactNode;
   detail: React.ReactNode;
+  params: Promise<{ eventId: string }>;
 }) {
-  return <SplitViewLayout list={children} detail={detail} />;
+  const { eventId } = await params;
+  return (
+    <SplitViewLayout
+      list={children}
+      detail={detail}
+      basePath={`/admin/events/${eventId}/strategy`}
+    />
+  );
 }

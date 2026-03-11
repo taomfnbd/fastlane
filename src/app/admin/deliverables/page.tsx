@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { DeadlineBadge } from "@/components/shared/deadline-badge";
 import { DeliverablesFilter } from "@/components/admin/deliverables-filter";
 import { Package, Mail, Globe, MessageSquare, FileText, Megaphone, MoreHorizontal } from "lucide-react";
 import { relativeTime } from "@/lib/utils";
@@ -98,6 +99,9 @@ export default async function AdminDeliverablesPage({
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium truncate">{d.title}</p>
                     <StatusBadge status={d.status} />
+                    {d.dueDate && (
+                      <DeadlineBadge dueDate={d.dueDate} status={d.status} />
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {d.eventCompany.company.name} · {d.eventCompany.event.name} · {getDeliverableTypeLabel(d.type)} · v{d.version}

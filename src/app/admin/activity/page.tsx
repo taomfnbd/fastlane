@@ -2,7 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
+import { SearchInput } from "@/components/shared/search-input";
 import { ActivityFilter } from "@/components/admin/activity-filter";
+import { EmptyState } from "@/components/shared/empty-state";
 import { Send, Check, XCircle, MessageSquare, FileUp, RefreshCw, Target, Package, Calendar } from "lucide-react";
 import Link from "next/link";
 import type { Prisma } from "@/generated/prisma/client";
@@ -27,16 +29,17 @@ const activityIcons: Record<string, typeof Target> = {
 export default async function ActivityPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; type?: string; user?: string; event?: string }>;
+  searchParams: Promise<{ page?: string; type?: string; user?: string; event?: string; q?: string }>;
 }) {
   await requireAdmin();
-  const { page = "1", type, user, event } = await searchParams;
+  const { page = "1", type, user, event, q } = await searchParams;
   const currentPage = Math.max(1, Number(page));
   const perPage = 20;
 
   const where: Prisma.ActivityWhereInput = {};
   if (type) where.type = type as Prisma.ActivityWhereInput["type"];
   if (user) where.userId = user;
+  if (q) where.message = { contains: q, mode: "insensitive" };
   if (event) {
     where.OR = [
       { strategy: { eventCompany: { eventId: event } } },
@@ -64,9 +67,14 @@ export default async function ActivityPage({
   return (
     <div className="space-y-4">
       <PageHeader title="Activite" />
-      <ActivityFilter users={users} events={events} />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1">
+          <SearchInput basePath="/admin/activity" placeholder="Rechercher une activite..." />
+        </div>
+        <ActivityFilter users={users} events={events} />
+      </div>
       {activities.length === 0 ? (
-        <p className="text-xs text-muted-foreground py-8 text-center">Aucune activite.</p>
+        <EmptyState icon={Calendar} title="Aucune activite" description="Les actions de vos equipes apparaitront ici." />
       ) : (
         <div className="space-y-0">
           {activities.map((activity) => {

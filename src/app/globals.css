@@ -140,3 +140,48 @@
 .animate-fade-up {
   animation: fade-up 0.3s ease-out;
 }
+
+/* ───── Portal Stitch design system ───── */
+.portal-theme {
+  --background: #100f23;
+  --foreground: #f1f5f9;
+  --card: #1b1b28;
+  --card-foreground: #e2e8f0;
+  --primary: #6961ff;
+  --primary-foreground: #ffffff;
+  --secondary: #1e1e2e;
+  --secondary-foreground: #f1f5f9;
+  --muted: #161622;
+  --muted-foreground: #64748b;
+  --accent: #1e1e2e;
+  --accent-foreground: #f1f5f9;
+  --border: #1e1e35;
+  --input: #1b1b28;
+  --ring: #6961ff;
+  --destructive: #ef4444;
+  --popover: #1b1b28;
+  --popover-foreground: #e2e8f0;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.custom-glow {
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
+.shadow-portal-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(105, 97, 255, 0.2);
+  border-radius: 10px;
+}

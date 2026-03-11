@@ -11,6 +11,20 @@ import { DeliverableReviewActions } from "@/components/portal/deliverable-review
 import { getDeliverableTypeLabel } from "@/lib/portal-constants";
 import { relativeTime } from "@/lib/utils";
 
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(date));
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ deliverableId: string }> }) {
   const { deliverableId } = await params;
   const d = await prisma.deliverable.findUnique({
@@ -59,6 +73,7 @@ export default async function DeliverableDetailPage({
   if (deliverable.eventCompany.company.id !== session.companyId) notFound();
 
   const content = deliverable.content as Record<string, unknown> | null;
+  const contentText = content && typeof content.text === "string" ? content.text : null;
   const needsAction = deliverable.status === "IN_REVIEW" || deliverable.status === "REVISED";
   const isDone = deliverable.status === "APPROVED" || deliverable.status === "DELIVERED";
 
@@ -72,13 +87,13 @@ export default async function DeliverableDetailPage({
         </Link>
         <h1 className="text-xl font-semibold tracking-tight">{deliverable.title}</h1>
         {deliverable.description && (
-          <p className="text-sm text-muted-foreground mt-0.5">{deliverable.description}</p>
+          <p className="text-sm text-muted-foreground mt-1">{deliverable.description}</p>
         )}
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
           <StatusBadge status={deliverable.status} />
           <span>{getDeliverableTypeLabel(deliverable.type)}</span>
           <span>v{deliverable.version}</span>
-          <span>Soumis {relativeTime(deliverable.updatedAt)}</span>
+          <span>{deliverable.eventCompany.event.name}</span>
         </div>
       </div>
 
@@ -103,20 +118,68 @@ export default async function DeliverableDetailPage({
         </div>
       )}
 
-      {/* Content preview */}
-      {content && (
+      {/* Metadata card */}
+      <div className="bg-card rounded-xl border border-primary/5 p-6">
+        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-2">
+          <span className="material-symbols-outlined text-sm">info</span>
+          Details
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <p className="text-[11px] text-muted-foreground">Type</p>
+            <p className="text-sm font-medium mt-0.5">{getDeliverableTypeLabel(deliverable.type)}</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground">Version</p>
+            <p className="text-sm font-medium mt-0.5">v{deliverable.version}</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground">Cree le</p>
+            <p className="text-sm font-medium mt-0.5">{formatDate(deliverable.createdAt)}</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground">Derniere mise a jour</p>
+            <p className="text-sm font-medium mt-0.5">{relativeTime(deliverable.updatedAt)}</p>
+          </div>
+          {deliverable.dueDate && (
+            <div>
+              <p className="text-[11px] text-muted-foreground">Echeance</p>
+              <p className="text-sm font-medium mt-0.5">{formatDate(deliverable.dueDate)}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Content preview — text field */}
+      {contentText && (
         <div>
-          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">article</span>
+            Contenu
+          </h2>
+          <div className="bg-card rounded-xl border border-primary/5 p-6">
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              <p className="whitespace-pre-wrap text-sm">{contentText}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content preview — structured (email, script, etc) */}
+      {content && !contentText && (
+        <div>
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">article</span>
             Apercu
           </h2>
           {deliverable.type === "EMAIL_TEMPLATE" && content.subject ? (
-            <div className="rounded-xl border bg-card p-6 space-y-4">
+            <div className="rounded-xl border bg-card border-primary/5 p-6 space-y-4">
               <div>
                 <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Objet</p>
                 <p className="text-sm font-medium mt-0.5">{String(content.subject)}</p>
               </div>
               {content.body != null && (
-                <div className="border-t pt-4">
+                <div className="border-t border-primary/5 pt-4">
                   <pre className="whitespace-pre-wrap font-sans text-sm">
                     {String(content.body)}
                   </pre>
@@ -124,15 +187,13 @@ export default async function DeliverableDetailPage({
               )}
             </div>
           ) : deliverable.type === "SCRIPT" ? (
-            <div className="rounded-xl border p-4">
-              <div className="prose prose-sm max-w-none dark:prose-invert">
-                <pre className="whitespace-pre-wrap font-sans text-sm">
-                  {typeof content === "string" ? content : JSON.stringify(content, null, 2)}
-                </pre>
-              </div>
+            <div className="rounded-xl border border-primary/5 p-4">
+              <pre className="whitespace-pre-wrap font-sans text-sm">
+                {typeof content === "string" ? content : JSON.stringify(content, null, 2)}
+              </pre>
             </div>
           ) : (
-            <div className="rounded-xl border p-4">
+            <div className="rounded-xl border border-primary/5 p-4">
               <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
                 {JSON.stringify(content, null, 2)}
               </pre>
@@ -143,15 +204,19 @@ export default async function DeliverableDetailPage({
 
       {/* File download */}
       {deliverable.fileUrl && (
-        <div className="flex items-center gap-3 rounded-xl border p-4">
-          <FileText className="h-8 w-8 text-muted-foreground shrink-0" />
+        <div className="flex items-center gap-3 rounded-xl bg-card border border-primary/5 p-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+            <FileText className="h-5 w-5 text-muted-foreground" />
+          </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">{deliverable.fileName ?? "Fichier joint"}</p>
-            <p className="text-[11px] text-muted-foreground">Cliquer pour telecharger</p>
+            <p className="text-[11px] text-muted-foreground">
+              {deliverable.fileSize ? formatFileSize(deliverable.fileSize) : "Telecharger le fichier"}
+            </p>
           </div>
-          <Button variant="outline" size="sm" asChild className="h-7 text-xs">
+          <Button variant="outline" size="sm" asChild className="h-8 text-xs">
             <a href={deliverable.fileUrl} download>
-              <Download className="mr-1 h-3 w-3" />
+              <Download className="mr-1.5 h-3 w-3" />
               Telecharger
             </a>
           </Button>
@@ -160,10 +225,11 @@ export default async function DeliverableDetailPage({
 
       {/* Comments */}
       <div>
-        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+          <span className="material-symbols-outlined text-sm">chat</span>
           Commentaires ({deliverable.comments.length})
         </h2>
-        <div className="rounded-xl border p-3">
+        <div className="rounded-xl border border-primary/5 p-3">
           <CommentSection
             comments={deliverable.comments.map((c) => ({ ...c, authorId: c.author.id, replies: c.replies.map((r) => ({ ...r, authorId: r.author.id })) }))}
             currentUserId={session.user.id}
@@ -174,10 +240,11 @@ export default async function DeliverableDetailPage({
 
       {/* Questions */}
       <div>
-        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+          <span className="material-symbols-outlined text-sm">help</span>
           Questions
         </h2>
-        <div className="rounded-xl border p-3">
+        <div className="rounded-xl border border-primary/5 p-3">
           <QuestionSection
             questions={deliverable.questions}
             isAdmin={false}

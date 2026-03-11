@@ -3,7 +3,7 @@ import { requireClient } from "@/lib/auth-server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { EMPTY_STATES } from "@/lib/portal-constants";
 import { StrategyCardActions } from "@/components/portal/strategy-card-actions";
-import { Target, CheckCircle2 } from "lucide-react";
+import { Target } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = { title: "Strategies" };
@@ -52,11 +52,11 @@ export default async function PortalStrategyPage() {
       {/* Page header */}
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-semibold tracking-tight">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">
             Bonjour, {companyName}
           </h1>
           {eventName && (
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-[#6961ff] border border-primary/20">
               {eventName}
             </span>
           )}
@@ -73,56 +73,59 @@ export default async function PortalStrategyPage() {
         <>
           {/* Pending strategies */}
           {pending.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex items-center gap-2">
-                <Target className="h-4.5 w-4.5 text-primary" />
-                <h2 className="text-sm font-semibold">
-                  Strategies proposees
+                <span className="material-symbols-outlined text-[#6961ff] text-xl">track_changes</span>
+                <h2 className="text-sm font-semibold text-foreground">
+                  Stratégies proposées
                 </h2>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-3">
+              <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
                 {pending.map((strategy) => {
                   const isPending = needsReview(strategy.status);
 
                   return (
                     <div
                       key={strategy.id}
-                      className="rounded-xl border bg-card p-5 flex flex-col gap-3"
+                      className="bg-card rounded-xl shadow-lg border border-primary/5 overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] h-fit"
                     >
-                      {/* Top row: status + date */}
-                      <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          {isPending ? "En attente" : "Modifications demandees"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          Envoye le {formatDate(strategy.updatedAt)}
-                        </span>
+                      <div className="p-6 space-y-5">
+                        {/* Top row: status + date */}
+                        <div className="flex justify-between items-start">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-[#6961ff] border border-primary/20">
+                            <span className="material-symbols-outlined text-[14px] mr-1">schedule</span>
+                            {isPending ? "En attente" : "Modifications demandées"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Envoyé le {formatDate(strategy.updatedAt)}
+                          </span>
+                        </div>
+
+                        {/* Title */}
+                        <div>
+                          <Link
+                            href={`/portal/strategy/${strategy.id}`}
+                            className="text-lg font-bold hover:text-[#6961ff] transition-colors"
+                          >
+                            {strategy.title}
+                          </Link>
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            {strategy.eventCompany.event.name}
+                          </p>
+
+                          {strategy.description && (
+                            <p className="text-muted-foreground text-sm leading-relaxed mt-2 line-clamp-3">
+                              {strategy.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Action buttons */}
+                        {isPending && (
+                          <StrategyCardActions strategyId={strategy.id} />
+                        )}
                       </div>
-
-                      {/* Title (link to detail) */}
-                      <Link
-                        href={`/portal/strategy/${strategy.id}`}
-                        className="text-lg font-semibold hover:underline decoration-muted-foreground/30 underline-offset-2"
-                      >
-                        {strategy.title}
-                      </Link>
-
-                      {/* Description */}
-                      {strategy.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-3">
-                          {strategy.description}
-                        </p>
-                      )}
-
-                      {/* Spacer */}
-                      <div className="flex-1" />
-
-                      {/* Action buttons */}
-                      {isPending && (
-                        <StrategyCardActions strategyId={strategy.id} />
-                      )}
                     </div>
                   );
                 })}
@@ -132,40 +135,45 @@ export default async function PortalStrategyPage() {
 
           {/* Approved strategies */}
           {approved.length > 0 && (
-            <div className="space-y-4 opacity-60">
+            <div className="space-y-6 opacity-60">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4.5 w-4.5 text-emerald-500" />
-                <h2 className="text-sm font-semibold">
-                  Strategies validees ({approved.length})
+                <span className="material-symbols-outlined text-emerald-500 text-xl">check_circle</span>
+                <h2 className="text-sm font-semibold text-foreground">
+                  Stratégies validées ({approved.length})
                 </h2>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-3">
+              <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
                 {approved.map((strategy) => (
                   <Link
                     key={strategy.id}
                     href={`/portal/strategy/${strategy.id}`}
-                    className="group rounded-xl border bg-card p-5 flex flex-col gap-3 transition-opacity hover:opacity-80"
+                    className="group bg-card rounded-xl shadow-lg border border-primary/5 overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] h-fit"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        Approuvee
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(strategy.updatedAt)}
-                      </span>
-                    </div>
+                    <div className="p-6 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="material-symbols-outlined text-[14px] mr-1">check_circle</span>
+                          Approuvée
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(strategy.updatedAt)}
+                        </span>
+                      </div>
 
-                    <p className="text-lg font-semibold group-hover:underline decoration-muted-foreground/30 underline-offset-2">
-                      {strategy.title}
-                    </p>
-
-                    {strategy.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-3">
-                        {strategy.description}
+                      <p className="text-lg font-bold group-hover:text-[#6961ff] transition-colors">
+                        {strategy.title}
                       </p>
-                    )}
+                      <p className="text-[11px] text-muted-foreground">
+                        {strategy.eventCompany.event.name}
+                      </p>
+
+                      {strategy.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+                          {strategy.description}
+                        </p>
+                      )}
+                    </div>
                   </Link>
                 ))}
               </div>

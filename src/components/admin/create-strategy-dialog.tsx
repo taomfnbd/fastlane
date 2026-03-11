@@ -57,6 +57,10 @@ export function CreateStrategyDialog({ eventCompanyId, companyName }: CreateStra
               <Label htmlFor="description">Description (optionnel)</Label>
               <Textarea id="description" name="description" placeholder="Decrivez la strategie..." rows={3} disabled={loading} />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="dueDate">Echeance (optionnel)</Label>
+              <Input id="dueDate" name="dueDate" type="datetime-local" disabled={loading} />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>Annuler</Button>

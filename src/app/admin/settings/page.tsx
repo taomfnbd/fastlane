@@ -1,23 +1,59 @@
 import { requireAdmin } from "@/lib/auth-server";
 import { PageHeader } from "@/components/shared/page-header";
+import { prisma } from "@/lib/prisma";
+import { SettingsClient } from "@/components/admin/settings-client";
 
 export const metadata = { title: "Parametres" };
 
 export default async function AdminSettingsPage() {
   await requireAdmin();
+
+  const [settings, webhooks] = await Promise.all([
+    prisma.setting.findMany({
+      where: {
+        key: {
+          in: [
+            "platform_name",
+            "support_email",
+            "notification_method",
+            "email_from",
+          ],
+        },
+      },
+    }),
+    prisma.webhookConfig.findMany({
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  const settingsMap: Record<string, unknown> = {};
+  for (const s of settings) {
+    settingsMap[s.key] = s.value;
+  }
+
+  const serializedWebhooks = webhooks.map((w) => ({
+    id: w.id,
+    name: w.name,
+    url: w.url,
+    events: w.events,
+    active: w.active,
+    secret: w.secret,
+    createdAt: w.createdAt.toISOString(),
+  }));
+
+  const hasResendKey = !!process.env.RESEND_API_KEY;
+
   return (
     <div className="space-y-6">
-      <PageHeader title="Parametres" />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-md border p-4 space-y-2">
-          <h2 className="text-sm font-medium">General</h2>
-          <p className="text-xs text-muted-foreground">Les parametres de la plateforme seront disponibles ici.</p>
-        </div>
-        <div className="rounded-md border p-4 space-y-2">
-          <h2 className="text-sm font-medium">Facturation</h2>
-          <p className="text-xs text-muted-foreground">Integration Stripe et gestion des abonnements.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Parametres"
+        description="Configuration de la plateforme"
+      />
+      <SettingsClient
+        initialSettings={settingsMap}
+        initialWebhooks={serializedWebhooks}
+        hasResendKey={hasResendKey}
+      />
     </div>
   );
 }
