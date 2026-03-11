@@ -123,13 +123,13 @@ npx tsx prisma/seed.ts  # Seed la base
 
 **Déploiement** : push sur `main` → Vercel auto-deploy. Le build script inclut `prisma generate`.
 
-## Comptes de test
+**Après un changement de schema** : toujours synchroniser la DB prod avec `npx prisma db push` (avec l'URL Neon) avant ou après le déploiement.
 
-| Rôle | Email | Mot de passe |
-|------|-------|-------------|
-| Super Admin | admin@fastlane.io | password123 |
-| Admin | team1@fastlane.io | password123 |
-| Client | sophie@techvision.io | password123 |
+## Premier démarrage
+
+La base de données de production est vide. Pour commencer :
+1. Créer un premier compte Super Admin via le seed : `npx tsx prisma/seed.ts`
+2. Ou créer un compte directement via `/register` puis mettre à jour le rôle en base
 
 ## Environnement
 
