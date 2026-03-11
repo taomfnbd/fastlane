@@ -5,10 +5,12 @@ import { checkRateLimit } from "@/lib/rate-limit";
 
 const handler = toNextJsHandler(auth);
 
-// Rate-limited auth endpoints (login, signup, forgot-password)
+// Endpoints blocked from public access (users created by admin only)
+const BLOCKED_PATHS = new Set(["/sign-up/email"]);
+
+// Rate-limited auth endpoints
 const RATE_LIMITED_PATHS = new Set([
   "/sign-in/email",
-  "/sign-up/email",
   "/request-password-reset",
 ]);
 
@@ -28,9 +30,19 @@ export async function POST(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const authPath = pathname.replace("/api/auth", "");
 
+  // Block self-registration — only admins can create users via server actions
+  if (BLOCKED_PATHS.has(authPath)) {
+    return NextResponse.json(
+      { error: "Les inscriptions sont desactivees. Contactez un administrateur." },
+      { status: 403 },
+    );
+  }
+
   if (RATE_LIMITED_PATHS.has(authPath)) {
     const ip = getClientIp(request);
-    const result = checkRateLimit(`auth:${ip}:${authPath}`, 5, 60_000);
+    // 5 attempts per minute for login, 3 per minute for password reset
+    const limit = authPath === "/request-password-reset" ? 3 : 5;
+    const result = await checkRateLimit(`auth:${ip}:${authPath}`, limit, 60_000);
     if (!result.allowed) {
       return NextResponse.json(
         { error: "Trop de tentatives. Reessayez plus tard." },

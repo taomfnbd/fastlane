@@ -1,42 +1,44 @@
-// WARNING: In-memory rate limiting does NOT work reliably on serverless (Vercel).
-// Each function invocation may get a fresh instance with an empty map.
-// For production, migrate to Redis (e.g. @upstash/ratelimit) or Vercel KV.
-const rateMap = new Map<string, { count: number; resetAt: number }>();
-
-const CLEANUP_INTERVAL = 60_000;
-let lastCleanup = Date.now();
-
-function cleanup() {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL) return;
-  lastCleanup = now;
-  for (const [key, entry] of rateMap) {
-    if (entry.resetAt <= now) rateMap.delete(key);
-  }
-}
+import { prisma } from "@/lib/prisma";
 
 /**
- * Simple in-memory rate limiter.
- * Returns { allowed: true } or { allowed: false, retryAfter } (seconds).
+ * Database-backed rate limiter — works on Vercel serverless.
+ * Uses the RateLimit table for persistent state across invocations.
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   key: string,
   maxRequests: number,
   windowMs: number,
-): { allowed: true } | { allowed: false; retryAfter: number } {
-  cleanup();
-  const now = Date.now();
-  const entry = rateMap.get(key);
+): Promise<{ allowed: true } | { allowed: false; retryAfter: number }> {
+  const now = new Date();
 
-  if (!entry || entry.resetAt <= now) {
-    rateMap.set(key, { count: 1, resetAt: now + windowMs });
+  // Clean expired entries occasionally (1 in 10 chance to avoid every-request overhead)
+  if (Math.random() < 0.1) {
+    await prisma.rateLimit.deleteMany({ where: { expiresAt: { lt: now } } }).catch(() => {});
+  }
+
+  const existing = await prisma.rateLimit.findUnique({ where: { key } });
+
+  // No entry or expired — create fresh
+  if (!existing || existing.expiresAt <= now) {
+    await prisma.rateLimit.upsert({
+      where: { key },
+      create: { key, count: 1, expiresAt: new Date(now.getTime() + windowMs) },
+      update: { count: 1, expiresAt: new Date(now.getTime() + windowMs) },
+    });
     return { allowed: true };
   }
 
-  if (entry.count >= maxRequests) {
-    return { allowed: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
+  // Over limit
+  if (existing.count >= maxRequests) {
+    const retryAfter = Math.ceil((existing.expiresAt.getTime() - now.getTime()) / 1000);
+    return { allowed: false, retryAfter };
   }
 
-  entry.count++;
+  // Increment
+  await prisma.rateLimit.update({
+    where: { key },
+    data: { count: { increment: 1 } },
+  });
+
   return { allowed: true };
 }
